@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Trophy, Sparkles } from "lucide-react";
-import heroImg from "@/assets/wc2026-hero.jpg";
+import heroImg from "@/assets/wc2026-hero.svg";
 
 const searchSchema = z.object({ tab: z.enum(["login", "signup"]).optional() });
 
@@ -27,14 +27,14 @@ function AuthPage() {
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate({ to: "/matches" });
+      if (data.session) navigate({ to: "/dashboard" });
     });
   }, [navigate]);
 
   const handleGoogle = async () => {
     setLoading(true);
     const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/matches",
+      redirect_uri: window.location.origin + "/dashboard",
     });
     if (error) {
       toast.error(error.message);
@@ -53,7 +53,7 @@ function AuthPage() {
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Bine ai revenit!");
-    navigate({ to: "/matches" });
+    navigate({ to: "/dashboard" });
   };
 
   const handleSignup = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -67,12 +67,12 @@ function AuthPage() {
     const { error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { display_name, invite_code }, emailRedirectTo: window.location.origin + "/matches" },
+      options: { data: { display_name, invite_code }, emailRedirectTo: window.location.origin + "/dashboard" },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
     toast.success("Cont creat! Te poți autentifica.");
-    navigate({ to: "/matches" });
+    navigate({ to: "/dashboard" });
   };
 
   return (
