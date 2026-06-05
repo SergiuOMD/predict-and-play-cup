@@ -17,6 +17,7 @@ import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenti
 import { Route as AuthenticatedGroupsRouteImport } from './routes/_authenticated/groups'
 import { Route as AuthenticatedBonusRouteImport } from './routes/_authenticated/bonus'
 import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/admin'
+import { Route as AuthenticatedMatchesIndexRouteImport } from './routes/_authenticated/matches.index'
 import { Route as AuthenticatedMatchesIdRouteImport } from './routes/_authenticated/matches.$id'
 
 const AuthRoute = AuthRouteImport.update({
@@ -59,6 +60,12 @@ const AuthenticatedAdminRoute = AuthenticatedAdminRouteImport.update({
   path: '/admin',
   getParentRoute: () => AuthenticatedRouteRoute,
 } as any)
+const AuthenticatedMatchesIndexRoute =
+  AuthenticatedMatchesIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => AuthenticatedMatchesRoute,
+  } as any)
 const AuthenticatedMatchesIdRoute = AuthenticatedMatchesIdRouteImport.update({
   id: '/$id',
   path: '/$id',
@@ -74,6 +81,7 @@ export interface FileRoutesByFullPath {
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/matches': typeof AuthenticatedMatchesRouteWithChildren
   '/matches/$id': typeof AuthenticatedMatchesIdRoute
+  '/matches/': typeof AuthenticatedMatchesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -82,8 +90,8 @@ export interface FileRoutesByTo {
   '/bonus': typeof AuthenticatedBonusRoute
   '/groups': typeof AuthenticatedGroupsRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
-  '/matches': typeof AuthenticatedMatchesRouteWithChildren
   '/matches/$id': typeof AuthenticatedMatchesIdRoute
+  '/matches': typeof AuthenticatedMatchesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -96,6 +104,7 @@ export interface FileRoutesById {
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/matches': typeof AuthenticatedMatchesRouteWithChildren
   '/_authenticated/matches/$id': typeof AuthenticatedMatchesIdRoute
+  '/_authenticated/matches/': typeof AuthenticatedMatchesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -108,6 +117,7 @@ export interface FileRouteTypes {
     | '/leaderboard'
     | '/matches'
     | '/matches/$id'
+    | '/matches/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -116,8 +126,8 @@ export interface FileRouteTypes {
     | '/bonus'
     | '/groups'
     | '/leaderboard'
-    | '/matches'
     | '/matches/$id'
+    | '/matches'
   id:
     | '__root__'
     | '/'
@@ -129,6 +139,7 @@ export interface FileRouteTypes {
     | '/_authenticated/leaderboard'
     | '/_authenticated/matches'
     | '/_authenticated/matches/$id'
+    | '/_authenticated/matches/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -195,6 +206,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedAdminRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/_authenticated/matches/': {
+      id: '/_authenticated/matches/'
+      path: '/'
+      fullPath: '/matches/'
+      preLoaderRoute: typeof AuthenticatedMatchesIndexRouteImport
+      parentRoute: typeof AuthenticatedMatchesRoute
+    }
     '/_authenticated/matches/$id': {
       id: '/_authenticated/matches/$id'
       path: '/$id'
@@ -207,10 +225,12 @@ declare module '@tanstack/react-router' {
 
 interface AuthenticatedMatchesRouteChildren {
   AuthenticatedMatchesIdRoute: typeof AuthenticatedMatchesIdRoute
+  AuthenticatedMatchesIndexRoute: typeof AuthenticatedMatchesIndexRoute
 }
 
 const AuthenticatedMatchesRouteChildren: AuthenticatedMatchesRouteChildren = {
   AuthenticatedMatchesIdRoute: AuthenticatedMatchesIdRoute,
+  AuthenticatedMatchesIndexRoute: AuthenticatedMatchesIndexRoute,
 }
 
 const AuthenticatedMatchesRouteWithChildren =

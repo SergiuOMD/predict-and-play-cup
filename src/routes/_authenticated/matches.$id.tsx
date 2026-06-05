@@ -53,12 +53,18 @@ function MatchDetail() {
     points: number;
   }>>([]);
   const [saving, setSaving] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const load = async () => {
-    const { data: m } = await supabase
+    const { data: m, error } = await supabase
       .from("matches")
       .select("id,kickoff_at,status,group_letter,stage,home_score,away_score,home_team_label,away_team_label,home_team:teams!matches_home_team_id_fkey(name,flag_emoji),away_team:teams!matches_away_team_id_fkey(name,flag_emoji)")
       .eq("id", id).maybeSingle();
+    setLoading(false);
+    if (error || !m) {
+      setMatch(null);
+      return;
+    }
     setMatch(m as unknown as Match);
 
     const { data: u } = await supabase.auth.getUser();
@@ -95,9 +101,25 @@ function MatchDetail() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  if (!match) {
+  if (loading) {
     return (
       <div className="app-card animate-pulse p-12 text-center text-muted-foreground">Se încarcă...</div>
+    );
+  }
+
+  if (!match) {
+    return (
+      <div className="space-y-4">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-1 text-[var(--wc-hermes)]"
+          onClick={() => navigate({ to: "/matches" })}
+        >
+          <ArrowLeft className="h-4 w-4" /> Înapoi la meciuri
+        </Button>
+        <div className="app-card p-10 text-center text-muted-foreground">Meciul nu a fost găsit.</div>
+      </div>
     );
   }
 
