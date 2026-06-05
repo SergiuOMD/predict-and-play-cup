@@ -12,6 +12,9 @@ Eroarea **500 la signup** apare aproape întotdeauna când lipsește schema DB s
 2. `supabase/migrations/20260605125453_300fb33d-3329-4061-9f75-3717956826be.sql`
 3. `supabase/migrations/20260605140000_football_data_external_ids.sql`
 4. `supabase/migrations/20260605150000_seed_invite_admin.sql`
+5. `supabase/migrations/20260605160000_fix_signup_invite_code.sql`
+
+**Sau** după migrările 1–3, rulează `supabase/setup_new_project.sql` (seed + fix + verificare).
 
 ### 2. Adaugă-te ca admin
 
@@ -70,6 +73,15 @@ npm run dev
 - Tab **Înregistrare**
 - Cod invitație: **`OMDworldcup2026`** (exact, case-sensitive)
 - După signup → Login sau redirect automat la `/matches`
+
+## Vezi eroarea exactă în Supabase
+
+**Logs → Postgres Logs** (sau **Authentication → Logs**) imediat după un signup eșuat.
+
+Mesaje frecvente:
+- `Cod de invitatie invalid` → rulează seed-ul / `setup_new_project.sql`
+- `relation "profiles" does not exist` → migrarea 1 nu a rulat
+- `function validate_invite_code does not exist` → migrarea 1 nu a rulat
 
 ## Depanare 500 la signup
 
