@@ -9,6 +9,10 @@ import { VitePWA } from "vite-plugin-pwa";
 
 const PWA_THEME = "#1a2238";
 
+const isLanDev =
+  process.env.npm_lifecycle_event === "dev:lan"
+  || process.env.npm_lifecycle_event === "preview:lan";
+
 export default defineConfig({
   vite: {
     plugins: [
@@ -65,15 +69,18 @@ export default defineConfig({
       }),
     ],
     server: {
-      // localhost evită probleme WebSocket HMR pe Windows (host "::" din config-ul implicit)
-      host: "localhost",
+      // localhost = doar pe PC; dev:lan = acces din telefon/laptop în aceeași rețea Wi‑Fi
+      host: isLanDev ? "0.0.0.0" : "localhost",
       port: 5173,
       strictPort: true,
-      hmr: {
-        host: "localhost",
-        port: 5173,
-        protocol: "ws",
-      },
+      hmr: isLanDev
+        ? { port: 5173, protocol: "ws" }
+        : { host: "localhost", port: 5173, protocol: "ws" },
+    },
+    preview: {
+      host: isLanDev ? "0.0.0.0" : "localhost",
+      port: 5173,
+      strictPort: true,
     },
   },
   tanstackStart: {
