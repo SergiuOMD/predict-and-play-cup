@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { lovable } from "@/integrations/lovable";
+import { signInWithGoogle } from "@/lib/auth/google-sign-in";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -10,7 +10,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Trophy, Sparkles } from "lucide-react";
-import heroImg from "@/assets/wc2026-hero.jpg";
+import heroImg from "@/assets/wc2026-hero.svg";
 
 const searchSchema = z.object({ tab: z.enum(["login", "signup"]).optional() });
 
@@ -33,9 +33,7 @@ function AuthPage() {
 
   const handleGoogle = async () => {
     setLoading(true);
-    const { error } = await lovable.auth.signInWithOAuth("google", {
-      redirect_uri: window.location.origin + "/matches",
-    });
+    const { error } = await signInWithGoogle();
     if (error) {
       toast.error(error.message);
       setLoading(false);
