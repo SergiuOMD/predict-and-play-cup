@@ -55,6 +55,8 @@ function MatchDetail() {
   }>>([]);
   const [saving, setSaving] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [disqualified, setDisqualified] = useState(false);
+  const [disqualifyReason, setDisqualifyReason] = useState<string | null>(null);
 
   const load = async () => {
     const { data: m, error } = await supabase
@@ -70,8 +72,13 @@ function MatchDetail() {
 
     const { data: u } = await supabase.auth.getUser();
     if (u.user) {
-      const { data: p } = await supabase.from("predictions").select("score1_home,score1_away,score2_home,score2_away,score3_home,score3_away,points").eq("match_id", id).eq("user_id", u.user.id).maybeSingle();
+      const [{ data: p }, { data: prof }] = await Promise.all([
+        supabase.from("predictions").select("score1_home,score1_away,score2_home,score2_away,score3_home,score3_away,points").eq("match_id", id).eq("user_id", u.user.id).maybeSingle(),
+        supabase.from("profiles").select("disqualified,disqualified_reason").eq("id", u.user.id).maybeSingle(),
+      ]);
       if (p) { setPred(p); setHasPred(true); }
+      setDisqualified(!!prof?.disqualified);
+      setDisqualifyReason(prof?.disqualified_reason ?? null);
     }
 
     const { data: all } = await supabase
@@ -125,7 +132,7 @@ function MatchDetail() {
   }
 
   const matchStatus = getMatchStatus(match.status, match.kickoff_at, match.home_score);
-  const locked = matchStatus === "locked" || matchStatus === "finished" || matchStatus === "live";
+  const locked = matchStatus === "locked" || matchStatus === "finished" || matchStatus === "live" || disqualified;
   const finished = matchStatus === "finished";
   const homeName = match.home_team?.name ?? match.home_team_label ?? "TBD";
   const awayName = match.away_team?.name ?? match.away_team_label ?? "TBD";
@@ -207,12 +214,20 @@ function MatchDetail() {
         </div>
       </div>
 
+      {disqualified && (
+        <div className="rounded-xl border border-[var(--wc-red)]/30 bg-[#fde8e9] px-4 py-3 text-sm text-[var(--wc-red)]">
+          <p className="font-semibold">Cont descalificat din competiție</p>
+          {disqualifyReason && <p className="mt-1 text-xs opacity-90">Motiv: {disqualifyReason}</p>}
+          <p className="mt-1 text-xs opacity-90">Nu mai poți trimite sau modifica pronosticuri.</p>
+        </div>
+      )}
+
       {/* Formular pronosticuri */}
       <div className="app-card p-6 sm:p-8">
         <h2 className="text-lg font-bold text-[var(--wc-hermes)]">Pronosticurile tale</h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Introdu 3 scoruri. 1 punct pentru fiecare exact (max 3 puncte).
-          {matchStatus === "locked" && (
+          {matchStatus === "locked" && !disqualified && (
             <span className="ml-1 font-medium text-[var(--wc-red)]">
               Blocate cu 1h înainte de kickoff.
             </span>

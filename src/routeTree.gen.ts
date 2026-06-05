@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedPredictionsRouteImport } from './routes/_authenticated/predictions'
 import { Route as AuthenticatedMatchesRouteImport } from './routes/_authenticated/matches'
 import { Route as AuthenticatedLeaderboardRouteImport } from './routes/_authenticated/leaderboard'
 import { Route as AuthenticatedGroupsRouteImport } from './routes/_authenticated/groups'
@@ -34,6 +35,12 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedPredictionsRoute =
+  AuthenticatedPredictionsRouteImport.update({
+    id: '/predictions',
+    path: '/predictions',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AuthenticatedMatchesRoute = AuthenticatedMatchesRouteImport.update({
   id: '/matches',
   path: '/matches',
@@ -80,6 +87,7 @@ export interface FileRoutesByFullPath {
   '/groups': typeof AuthenticatedGroupsRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/matches': typeof AuthenticatedMatchesRouteWithChildren
+  '/predictions': typeof AuthenticatedPredictionsRoute
   '/matches/$id': typeof AuthenticatedMatchesIdRoute
   '/matches/': typeof AuthenticatedMatchesIndexRoute
 }
@@ -90,6 +98,7 @@ export interface FileRoutesByTo {
   '/bonus': typeof AuthenticatedBonusRoute
   '/groups': typeof AuthenticatedGroupsRoute
   '/leaderboard': typeof AuthenticatedLeaderboardRoute
+  '/predictions': typeof AuthenticatedPredictionsRoute
   '/matches/$id': typeof AuthenticatedMatchesIdRoute
   '/matches': typeof AuthenticatedMatchesIndexRoute
 }
@@ -103,6 +112,7 @@ export interface FileRoutesById {
   '/_authenticated/groups': typeof AuthenticatedGroupsRoute
   '/_authenticated/leaderboard': typeof AuthenticatedLeaderboardRoute
   '/_authenticated/matches': typeof AuthenticatedMatchesRouteWithChildren
+  '/_authenticated/predictions': typeof AuthenticatedPredictionsRoute
   '/_authenticated/matches/$id': typeof AuthenticatedMatchesIdRoute
   '/_authenticated/matches/': typeof AuthenticatedMatchesIndexRoute
 }
@@ -116,6 +126,7 @@ export interface FileRouteTypes {
     | '/groups'
     | '/leaderboard'
     | '/matches'
+    | '/predictions'
     | '/matches/$id'
     | '/matches/'
   fileRoutesByTo: FileRoutesByTo
@@ -126,6 +137,7 @@ export interface FileRouteTypes {
     | '/bonus'
     | '/groups'
     | '/leaderboard'
+    | '/predictions'
     | '/matches/$id'
     | '/matches'
   id:
@@ -138,6 +150,7 @@ export interface FileRouteTypes {
     | '/_authenticated/groups'
     | '/_authenticated/leaderboard'
     | '/_authenticated/matches'
+    | '/_authenticated/predictions'
     | '/_authenticated/matches/$id'
     | '/_authenticated/matches/'
   fileRoutesById: FileRoutesById
@@ -170,6 +183,13 @@ declare module '@tanstack/react-router' {
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/predictions': {
+      id: '/_authenticated/predictions'
+      path: '/predictions'
+      fullPath: '/predictions'
+      preLoaderRoute: typeof AuthenticatedPredictionsRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/_authenticated/matches': {
       id: '/_authenticated/matches'
@@ -242,6 +262,7 @@ interface AuthenticatedRouteRouteChildren {
   AuthenticatedGroupsRoute: typeof AuthenticatedGroupsRoute
   AuthenticatedLeaderboardRoute: typeof AuthenticatedLeaderboardRoute
   AuthenticatedMatchesRoute: typeof AuthenticatedMatchesRouteWithChildren
+  AuthenticatedPredictionsRoute: typeof AuthenticatedPredictionsRoute
 }
 
 const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
@@ -250,6 +271,7 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
   AuthenticatedGroupsRoute: AuthenticatedGroupsRoute,
   AuthenticatedLeaderboardRoute: AuthenticatedLeaderboardRoute,
   AuthenticatedMatchesRoute: AuthenticatedMatchesRouteWithChildren,
+  AuthenticatedPredictionsRoute: AuthenticatedPredictionsRoute,
 }
 
 const AuthenticatedRouteRouteWithChildren =

@@ -214,6 +214,9 @@ export type Database = {
         Row: {
           avatar_url: string | null
           created_at: string
+          disqualified: boolean
+          disqualified_at: string | null
+          disqualified_reason: string | null
           display_name: string
           email: string
           id: string
@@ -221,6 +224,9 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          disqualified?: boolean
+          disqualified_at?: string | null
+          disqualified_reason?: string | null
           display_name: string
           email: string
           id: string
@@ -228,6 +234,9 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          disqualified?: boolean
+          disqualified_at?: string | null
+          disqualified_reason?: string | null
           display_name?: string
           email?: string
           id?: string

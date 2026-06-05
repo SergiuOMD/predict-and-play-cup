@@ -13,7 +13,9 @@ import { importFixtures } from "@/lib/fixtures.functions";
 import { PageHeader } from "@/components/app/page-header";
 import { TeamFlag } from "@/components/app/team-flag";
 import { resolveFlagEmoji } from "@/lib/team-flags";
-import { Shield } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Shield, Trash2, UserX, UserCheck } from "lucide-react";
+import { isMatchOpen } from "@/lib/match-utils";
 
 type Match = {
   id: string;
@@ -52,18 +54,22 @@ function AdminPage() {
     <div className="space-y-6">
       <PageHeader
         title="Admin"
-        description="Gestionare meciuri, echipe și setări turneu."
+        description="Gestionare meciuri, pronosticuri, utilizatori și setări turneu."
         icon={<Shield className="h-5 w-5 text-white" />}
       />
       <ImportFixturesCard />
       <Tabs defaultValue="scores">
-        <TabsList>
-          <TabsTrigger value="scores">Scoruri meciuri</TabsTrigger>
+        <TabsList className="flex h-auto flex-wrap gap-1">
+          <TabsTrigger value="scores">Scoruri</TabsTrigger>
+          <TabsTrigger value="predictions">Pronosticuri</TabsTrigger>
+          <TabsTrigger value="users">Utilizatori</TabsTrigger>
           <TabsTrigger value="teams">Echipe</TabsTrigger>
           <TabsTrigger value="matches">Meciuri</TabsTrigger>
           <TabsTrigger value="settings">Setări bonus</TabsTrigger>
         </TabsList>
         <TabsContent value="scores"><ScoresTab /></TabsContent>
+        <TabsContent value="predictions"><PredictionsTab /></TabsContent>
+        <TabsContent value="users"><UsersTab /></TabsContent>
         <TabsContent value="teams"><TeamsTab /></TabsContent>
         <TabsContent value="matches"><MatchesTab /></TabsContent>
         <TabsContent value="settings"><SettingsTab /></TabsContent>
@@ -274,6 +280,255 @@ function MatchesTab() {
         ))}
       </div>
     </CardContent></Card>
+  );
+}
+
+type PredictionRow = {
+  id: string;
+  user_id: string;
+  match_id: string;
+  score1_home: number;
+  score1_away: number;
+  score2_home: number;
+  score2_away: number;
+  score3_home: number;
+  score3_away: number;
+  updated_at: string;
+  profile: { display_name: string; email: string; disqualified: boolean } | null;
+  match: {
+    kickoff_at: string;
+    status: string;
+    home_score: number | null;
+    home_team_label: string | null;
+    away_team_label: string | null;
+    home_team: { name: string } | null;
+    away_team: { name: string } | null;
+  } | null;
+};
+
+function formatPredScores(p: PredictionRow) {
+  return `${p.score1_home}-${p.score1_away}, ${p.score2_home}-${p.score2_away}, ${p.score3_home}-${p.score3_away}`;
+}
+
+function PredictionsTab() {
+  const [rows, setRows] = useState<PredictionRow[]>([]);
+  const [openMatchCount, setOpenMatchCount] = useState(0);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    const { data: matches } = await supabase
+      .from("matches")
+      .select("id,kickoff_at,status,home_score")
+      .order("kickoff_at");
+
+    const openIds = ((matches ?? []) as Array<{ id: string; kickoff_at: string; status: string; home_score: number | null }>)
+      .filter((m) => isMatchOpen(m.status, m.kickoff_at, m.home_score))
+      .map((m) => m.id);
+
+    setOpenMatchCount(openIds.length);
+
+    if (openIds.length === 0) {
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    const { data, error } = await supabase
+      .from("predictions")
+      .select(`
+        id,user_id,match_id,score1_home,score1_away,score2_home,score2_away,score3_home,score3_away,updated_at,
+        profile:profiles(display_name,email,disqualified),
+        match:matches(
+          kickoff_at,status,home_score,home_team_label,away_team_label,
+          home_team:teams!matches_home_team_id_fkey(name),
+          away_team:teams!matches_away_team_id_fkey(name)
+        )
+      `)
+      .in("match_id", openIds)
+      .order("updated_at", { ascending: false });
+
+    if (error) toast.error(error.message);
+    setRows((data ?? []) as unknown as PredictionRow[]);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const remove = async (id: string, userName: string) => {
+    if (!confirm(`Ștergi pronosticul lui ${userName}?`)) return;
+    const { error } = await supabase.from("predictions").delete().eq("id", id);
+    if (error) return toast.error(error.message);
+    toast.success("Pronostic șters");
+    load();
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Pronosticuri active</CardTitle>
+        <CardDescription>
+          {openMatchCount} meciuri deschise · {rows.length} pronosticuri înregistrate
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {loading && <p className="text-muted-foreground">Se încarcă...</p>}
+        {!loading && rows.length === 0 && (
+          <p className="text-muted-foreground">Niciun pronostic pentru meciurile deschise.</p>
+        )}
+        {rows.map((r) => {
+          const home = r.match?.home_team?.name ?? r.match?.home_team_label ?? "?";
+          const away = r.match?.away_team?.name ?? r.match?.away_team_label ?? "?";
+          const kickoff = r.match?.kickoff_at
+            ? new Date(r.match.kickoff_at).toLocaleString("ro-RO")
+            : "—";
+          return (
+            <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold">
+                  {r.profile?.display_name ?? "Utilizator"}
+                  {r.profile?.disqualified && (
+                    <Badge variant="outline" className="ml-2 border-[var(--wc-red)]/30 text-[var(--wc-red)]">
+                      Descalificat
+                    </Badge>
+                  )}
+                </p>
+                <p className="text-xs text-muted-foreground">{r.profile?.email}</p>
+                <p className="mt-1 text-xs">
+                  {kickoff} · {home} vs {away}
+                </p>
+                <p className="mt-0.5 font-mono text-xs text-muted-foreground">{formatPredScores(r)}</p>
+              </div>
+              <Button
+                size="sm"
+                variant="destructive"
+                className="gap-1"
+                onClick={() => remove(r.id, r.profile?.display_name ?? "utilizator")}
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Șterge
+              </Button>
+            </div>
+          );
+        })}
+      </CardContent>
+    </Card>
+  );
+}
+
+type ProfileRow = {
+  id: string;
+  email: string;
+  display_name: string;
+  created_at: string;
+  disqualified: boolean;
+  disqualified_at: string | null;
+  disqualified_reason: string | null;
+};
+
+function UsersTab() {
+  const [users, setUsers] = useState<ProfileRow[]>([]);
+  const [myId, setMyId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const load = async () => {
+    setLoading(true);
+    const { data: u } = await supabase.auth.getUser();
+    setMyId(u.user?.id ?? null);
+
+    const { data, error } = await supabase
+      .from("profiles")
+      .select("id,email,display_name,created_at,disqualified,disqualified_at,disqualified_reason")
+      .order("display_name");
+
+    if (error) toast.error(error.message);
+    setUsers((data ?? []) as ProfileRow[]);
+    setLoading(false);
+  };
+
+  useEffect(() => { load(); }, []);
+
+  const disqualify = async (user: ProfileRow) => {
+    if (user.id === myId) return toast.error("Nu te poți descalifica pe tine însuți.");
+    const reason = prompt(`Motiv descalificare pentru ${user.display_name}:`, "");
+    if (reason === null) return;
+    const { error } = await supabase.from("profiles").update({
+      disqualified: true,
+      disqualified_at: new Date().toISOString(),
+      disqualified_reason: reason.trim() || null,
+    }).eq("id", user.id);
+    if (error) return toast.error(error.message);
+    toast.success(`${user.display_name} a fost descalificat`);
+    load();
+  };
+
+  const requalify = async (user: ProfileRow) => {
+    if (!confirm(`Reintroduci pe ${user.display_name} în competiție?`)) return;
+    const { error } = await supabase.from("profiles").update({
+      disqualified: false,
+      disqualified_at: null,
+      disqualified_reason: null,
+    }).eq("id", user.id);
+    if (error) return toast.error(error.message);
+    toast.success(`${user.display_name} a fost reintrodus`);
+    load();
+  };
+
+  const activeCount = users.filter((u) => !u.disqualified).length;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Utilizatori</CardTitle>
+        <CardDescription>
+          {users.length} înscriși · {activeCount} activi · {users.length - activeCount} descalificați
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {loading && <p className="text-muted-foreground">Se încarcă...</p>}
+        {users.map((u) => (
+          <div key={u.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
+            <div className="min-w-0">
+              <p className="flex flex-wrap items-center gap-2 font-semibold">
+                {u.display_name}
+                {u.disqualified ? (
+                  <Badge variant="outline" className="border-[var(--wc-red)]/30 bg-[#fde8e9] text-[var(--wc-red)]">
+                    Descalificat
+                  </Badge>
+                ) : (
+                  <Badge variant="outline" className="border-[var(--wc-green)]/30 bg-[#e8f5e8] text-[#2d7a2c]">
+                    Activ
+                  </Badge>
+                )}
+              </p>
+              <p className="text-xs text-muted-foreground">{u.email}</p>
+              {u.disqualified && u.disqualified_reason && (
+                <p className="mt-1 text-xs text-[var(--wc-red)]">Motiv: {u.disqualified_reason}</p>
+              )}
+            </div>
+            <div className="flex gap-2">
+              {u.disqualified ? (
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => requalify(u)}>
+                  <UserCheck className="h-3.5 w-3.5" />
+                  Reintrodu
+                </Button>
+              ) : (
+                <Button
+                  size="sm"
+                  variant="destructive"
+                  className="gap-1"
+                  disabled={u.id === myId}
+                  onClick={() => disqualify(u)}
+                >
+                  <UserX className="h-3.5 w-3.5" />
+                  Descalifică
+                </Button>
+              )}
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
   );
 }
 

@@ -2,6 +2,14 @@ export function isMatchLocked(kickoffAt: string): boolean {
   return new Date(kickoffAt).getTime() - Date.now() < 60 * 60 * 1000;
 }
 
+export function isMatchOpen(
+  status: string,
+  kickoffAt: string,
+  homeScore: number | null,
+): boolean {
+  return getMatchStatus(status, kickoffAt, homeScore) === "open";
+}
+
 export function getMatchStatus(
   status: string,
   kickoffAt: string,
