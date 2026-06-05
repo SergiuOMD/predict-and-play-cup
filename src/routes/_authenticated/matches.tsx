@@ -6,7 +6,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/app/page-header";
 import { MatchStatusBadge } from "@/components/app/match-status-badge";
 import { getMatchStatus } from "@/lib/match-utils";
-import { Calendar } from "lucide-react";
+import { Calendar, ChevronRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Match = {
   id: string;
@@ -96,11 +97,43 @@ function MatchesPage() {
             <h2 className="shrink-0 text-xs font-bold uppercase tracking-widest text-[var(--wc-hermes)]">{date}</h2>
             <div className="h-px flex-1 bg-[var(--wc-light-gray)]" />
           </div>
-          <div className="space-y-3">
+          <div className="app-card divide-y divide-[var(--wc-light-gray)] overflow-hidden">
             {list.map((m) => <MatchRow key={m.id} m={m} />)}
           </div>
         </section>
       ))}
+    </div>
+  );
+}
+
+function TeamCell({
+  name,
+  flag,
+  side,
+}: {
+  name: string;
+  flag: string;
+  side: "home" | "away";
+}) {
+  const isHome = side === "home";
+  return (
+    <div
+      className={cn(
+        "flex min-w-0 items-center gap-2.5",
+        isHome ? "flex-row-reverse justify-end" : "flex-row justify-start",
+      )}
+    >
+      <span className="shrink-0 text-2xl leading-none" aria-hidden>
+        {flag || "🏳️"}
+      </span>
+      <span
+        className={cn(
+          "min-w-0 truncate text-sm font-bold leading-tight sm:text-base",
+          isHome ? "text-right" : "text-left",
+        )}
+      >
+        {name}
+      </span>
     </div>
   );
 }
@@ -116,40 +149,44 @@ function MatchRow({ m }: { m: Match }) {
   const score = finished ? `${m.home_score} - ${m.away_score}` : undefined;
 
   return (
-    <Link to="/matches/$id" params={{ id: m.id }} className="block">
-      <article className="app-card app-card-interactive overflow-hidden">
-        <div className="flex items-stretch">
-          <div className="w-1 shrink-0 bg-[var(--wc-hermes)]" />
-          <div className="flex flex-1 flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
-            <div className="flex flex-wrap items-center gap-2">
-              <span className="rounded-md bg-[var(--wc-hermes)]/10 px-2 py-0.5 text-xs font-bold tabular-nums text-[var(--wc-hermes)]">
-                {time}
-              </span>
-              {m.group_letter && (
-                <Badge variant="outline" className="border-[var(--wc-light-gray)] text-[var(--wc-dark-gray)]">
-                  Grupa {m.group_letter}
-                </Badge>
-              )}
-              {m.stage !== "group" && (
-                <Badge variant="secondary" className="capitalize">{m.stage}</Badge>
-              )}
-              <MatchStatusBadge status={matchStatus} score={score} />
-            </div>
+    <Link
+      to="/matches/$id"
+      params={{ id: m.id }}
+      className="group block transition-colors hover:bg-[var(--wc-hermes)]/[0.04]"
+    >
+      <article className="px-4 py-4 sm:px-6 sm:py-5">
+        {/* Meta — rând propriu, deasupra meciului */}
+        <div className="mb-4 flex flex-wrap items-center gap-2">
+          <span className="rounded-md bg-[var(--wc-hermes)]/10 px-2.5 py-1 text-xs font-bold tabular-nums text-[var(--wc-hermes)]">
+            {time}
+          </span>
+          {m.group_letter && (
+            <Badge variant="outline" className="border-[var(--wc-light-gray)] font-medium text-[var(--wc-dark-gray)]">
+              Grupa {m.group_letter}
+            </Badge>
+          )}
+          {m.stage !== "group" && (
+            <Badge variant="secondary" className="capitalize">{m.stage}</Badge>
+          )}
+          <MatchStatusBadge status={matchStatus} score={score} />
+        </div>
 
-            <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3 sm:w-auto sm:min-w-[320px] sm:gap-4">
-              <div className="truncate text-right">
-                <span className="mr-1.5 text-lg">{homeFlag}</span>
-                <span className="text-sm font-semibold sm:text-base">{homeName}</span>
-              </div>
-              <div className="flex min-w-[4.5rem] items-center justify-center rounded-lg bg-gradient-hermes px-3 py-2 text-sm font-black tabular-nums text-white shadow-sm">
-                {finished ? `${m.home_score} - ${m.away_score}` : "VS"}
-              </div>
-              <div className="truncate">
-                <span className="mr-1.5 text-lg">{awayFlag}</span>
-                <span className="text-sm font-semibold sm:text-base">{awayName}</span>
-              </div>
-            </div>
+        {/*
+          Grid fix pe 3 coloane — VS/scor mereu centrat, indiferent de lungimea numelor.
+          Coloane simetrice 1fr | 5.5rem | 1fr pe toată lățimea cardului.
+        */}
+        <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_minmax(0,1fr)] items-center gap-x-3 sm:gap-x-6">
+          <TeamCell name={homeName} flag={homeFlag} side="home" />
+          <div className="flex h-11 w-[5.5rem] shrink-0 items-center justify-center self-center rounded-xl bg-gradient-hermes text-xs font-black tabular-nums text-white shadow-sm sm:text-sm">
+            {finished ? `${m.home_score}-${m.away_score}` : "VS"}
           </div>
+          <TeamCell name={awayName} flag={awayFlag} side="away" />
+        </div>
+
+        <div className="mt-3 flex justify-end opacity-0 transition-opacity group-hover:opacity-100">
+          <span className="flex items-center gap-0.5 text-xs font-medium text-[var(--wc-hermes)]">
+            Pronostichează <ChevronRight className="h-3.5 w-3.5" />
+          </span>
         </div>
       </article>
     </Link>
