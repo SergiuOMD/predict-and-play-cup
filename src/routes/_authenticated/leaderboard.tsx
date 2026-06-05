@@ -70,10 +70,15 @@ function LeaderboardPage() {
       ) : (
         <>
           {top3.length > 0 && (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3 sm:items-end">
-              {[1, 0, 2].map((idx) => {
-                const r = top3[idx];
-                if (!r) return <div key={idx} className="hidden sm:block" />;
+            <div
+              className={cn(
+                "grid grid-cols-1 gap-4 sm:items-end",
+                top3.length === 1 && "sm:grid-cols-1 sm:max-w-xs sm:mx-auto",
+                top3.length === 2 && "sm:grid-cols-2",
+                top3.length >= 3 && "sm:grid-cols-3",
+              )}
+            >
+              {top3.map((r, idx) => {
                 const style = PODIUM_STYLES[idx];
                 return (
                   <div
