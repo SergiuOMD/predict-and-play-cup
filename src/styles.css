@@ -146,6 +146,15 @@
     background-clip: text;
     color: transparent;
   }
+
+  .bg-gradient-gold {
+    background-image: var(--gradient-gold);
+    color: oklch(0.22 0.08 260);
+  }
+
+  .bg-gradient-gold:hover {
+    opacity: 0.9;
+  }
 }
 
 @layer base {

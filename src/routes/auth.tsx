@@ -94,7 +94,7 @@ function AuthPage() {
             <div className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--gradient-gold)]">
               <Trophy className="h-5 w-5 text-[oklch(0.22_0.08_260)]" />
             </div>
-            <span>OMD · WC2026</span>
+            <span className="text-sm leading-tight">ORBICO MOLDOVA WORLD CUP 2026</span>
           </div>
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[11px] uppercase tracking-widest backdrop-blur">
