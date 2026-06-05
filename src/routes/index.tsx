@@ -1,8 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Trophy, Target, Users, Sparkles, Zap, Calendar } from "lucide-react";
-import heroImg from "@/assets/wc2026-hero.svg";
-import trophyImg from "@/assets/wc2026-trophy.svg";
+import heroImg from "@/assets/wc2026-hero.jpg";
+import trophyImg from "@/assets/wc2026-trophy.png";
 
 export const Route = createFileRoute("/")({
   head: () => ({

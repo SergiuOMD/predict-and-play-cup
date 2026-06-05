@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Trophy, Sparkles } from "lucide-react";
-import heroImg from "@/assets/wc2026-hero.svg";
+import heroImg from "@/assets/wc2026-hero.jpg";
 
 const INVITE_CODE = "OMDworldcup2026";
 
