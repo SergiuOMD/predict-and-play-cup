@@ -24,9 +24,30 @@ export const Route = createFileRoute("/_authenticated/leaderboard")({
 });
 
 const PODIUM_STYLES = [
-  { ring: "ring-[var(--accent-gold)]/60", bg: "bg-gradient-to-b from-[#fff8e6] to-white", medal: "🥇", height: "sm:pt-0" },
-  { ring: "ring-[var(--wc-light-gray)]", bg: "bg-gradient-to-b from-[#f0f0f0] to-white", medal: "🥈", height: "sm:pt-6" },
-  { ring: "ring-[#cd7f32]/40", bg: "bg-gradient-to-b from-[#fdf0e6] to-white", medal: "🥉", height: "sm:pt-10" },
+  {
+    ring: "ring-[var(--accent-gold)]/70",
+    bg: "bg-gradient-to-b from-[#fff8e6] to-white",
+    medal: "🥇",
+    card: "p-6 sm:p-7 shadow-[var(--shadow-elegant)]",
+    avatar: "h-16 w-16",
+    score: "text-3xl",
+  },
+  {
+    ring: "ring-[var(--wc-light-gray)]",
+    bg: "bg-gradient-to-b from-[#f0f0f0] to-white",
+    medal: "🥈",
+    card: "p-5",
+    avatar: "h-12 w-12",
+    score: "text-xl",
+  },
+  {
+    ring: "ring-[#cd7f32]/40",
+    bg: "bg-gradient-to-b from-[#fdf0e6] to-white",
+    medal: "🥉",
+    card: "p-5",
+    avatar: "h-12 w-12",
+    score: "text-xl",
+  },
 ];
 
 function LeaderboardPage() {
@@ -72,10 +93,10 @@ function LeaderboardPage() {
           {top3.length > 0 && (
             <div
               className={cn(
-                "grid grid-cols-1 gap-4 sm:items-end",
-                top3.length === 1 && "sm:grid-cols-1 sm:max-w-xs sm:mx-auto",
-                top3.length === 2 && "sm:grid-cols-2",
-                top3.length >= 3 && "sm:grid-cols-3",
+                "grid grid-cols-1 gap-4 sm:items-stretch",
+                top3.length === 1 && "sm:grid-cols-1 sm:max-w-sm sm:mx-auto",
+                top3.length === 2 && "sm:grid-cols-[1.15fr_1fr]",
+                top3.length >= 3 && "sm:grid-cols-[1.15fr_1fr_1fr]",
               )}
             >
               {top3.map((r, idx) => {
@@ -84,22 +105,22 @@ function LeaderboardPage() {
                   <div
                     key={r.user_id}
                     className={cn(
-                      "app-card flex flex-col items-center p-5 text-center ring-2",
+                      "app-card flex flex-col items-center text-center ring-2",
                       style.bg,
                       style.ring,
-                      style.height,
+                      style.card,
                       r.user_id === me && "ring-[var(--wc-green)]",
                     )}
                   >
-                    <span className="text-3xl">{style.medal}</span>
-                    <Avatar className="mt-2 h-14 w-14 ring-2 ring-white">
+                    <span className={cn("leading-none", idx === 0 ? "text-4xl" : "text-2xl")}>{style.medal}</span>
+                    <Avatar className={cn("mt-2 ring-2 ring-white", style.avatar)}>
                       <AvatarImage src={r.avatar_url ?? undefined} />
                       <AvatarFallback className="bg-[var(--wc-hermes)] text-white">
                         {r.display_name.charAt(0).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
-                    <p className="mt-2 font-bold">{r.display_name}</p>
-                    <p className="text-2xl font-black text-[var(--wc-hermes)]">{r.total_points}</p>
+                    <p className={cn("mt-2 font-bold", idx === 0 && "text-base")}>{r.display_name}</p>
+                    <p className={cn("font-black text-[var(--wc-hermes)]", style.score)}>{r.total_points}</p>
                     <p className="text-xs text-muted-foreground">puncte</p>
                   </div>
                 );
