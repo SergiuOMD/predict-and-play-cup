@@ -68,7 +68,13 @@ function AuthPage() {
       options: { data: { display_name, invite_code }, emailRedirectTo: window.location.origin + "/matches" },
     });
     setLoading(false);
-    if (error) return toast.error(error.message);
+    if (error) {
+      const hint =
+        error.message.includes("Database error") || error.status === 500
+          ? `${error.message} — Verifică migrările SQL pe Supabase și codul OMDworldcup2026. Vezi docs/supabase-setup.md`
+          : error.message;
+      return toast.error(hint);
+    }
     if (data.session) {
       toast.success("Cont creat!");
       navigate({ to: "/matches" });
