@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 280" role="img" aria-label="World Cup trophy">
+  <defs>
+    <linearGradient id="gold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#f5d76e"/>
+      <stop offset="50%" stop-color="#d4a017"/>
+      <stop offset="100%" stop-color="#a67c00"/>
+    </linearGradient>
+    <linearGradient id="base" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#3d4a5c"/>
+      <stop offset="100%" stop-color="#1a2230"/>
+    </linearGradient>
+  </defs>
+  <ellipse cx="100" cy="248" rx="72" ry="14" fill="#0a0f18" opacity="0.4"/>
+  <rect x="52" y="210" width="96" height="28" rx="4" fill="url(#base)"/>
+  <rect x="68" y="198" width="64" height="16" rx="3" fill="url(#gold)"/>
+  <path d="M68 198 C68 120 80 60 100 40 C120 60 132 120 132 198 Z" fill="url(#gold)" stroke="#a67c00" stroke-width="2"/>
+  <ellipse cx="100" cy="42" rx="22" ry="10" fill="#f5d76e"/>
+  <path d="M48 100 Q30 130 38 160 Q50 140 68 130 Z" fill="url(#gold)" opacity="0.9"/>
+  <path d="M152 100 Q170 130 162 160 Q150 140 132 130 Z" fill="url(#gold)" opacity="0.9"/>
+  <text x="100" y="175" text-anchor="middle" font-size="28" font-weight="bold" fill="#5c3d00" font-family="system-ui,sans-serif">26</text>
+</svg>

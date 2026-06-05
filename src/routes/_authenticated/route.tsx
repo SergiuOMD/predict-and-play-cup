@@ -16,10 +16,12 @@ export const Route = createFileRoute("/_authenticated")({
 });
 
 const NAV = [
+  { to: "/dashboard", label: "Acasă" },
   { to: "/matches", label: "Meciuri" },
   { to: "/groups", label: "Grupe" },
   { to: "/leaderboard", label: "Clasament" },
   { to: "/bonus", label: "Bonus" },
+  { to: "/profile", label: "Profil" },
 ];
 
 function AuthedLayout() {
@@ -48,7 +50,7 @@ function AuthedLayout() {
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-40 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
-          <Link to="/matches" className="flex items-center gap-2 font-bold">
+          <Link to="/dashboard" className="flex items-center gap-2 font-bold">
             <Trophy className="h-5 w-5 text-primary" />
             <span className="hidden sm:inline">OMD WC2026</span>
           </Link>
