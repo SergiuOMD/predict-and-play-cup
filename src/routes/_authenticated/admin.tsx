@@ -16,6 +16,7 @@ import { resolveFlagEmoji } from "@/lib/team-flags";
 import { Badge } from "@/components/ui/badge";
 import { Shield, Trash2, UserX, UserCheck } from "lucide-react";
 import { isMatchOpen } from "@/lib/match-utils";
+import { formatPredictionScoresCsv } from "@/lib/prediction-utils";
 
 type Match = {
   id: string;
@@ -297,18 +298,12 @@ type PredictionRow = {
   profile: { display_name: string; email: string; disqualified: boolean } | null;
   match: {
     kickoff_at: string;
-    status: string;
-    home_score: number | null;
     home_team_label: string | null;
     away_team_label: string | null;
     home_team: { name: string } | null;
     away_team: { name: string } | null;
   } | null;
 };
-
-function formatPredScores(p: PredictionRow) {
-  return `${p.score1_home}-${p.score1_away}, ${p.score2_home}-${p.score2_away}, ${p.score3_home}-${p.score3_away}`;
-}
 
 function PredictionsTab() {
   const [rows, setRows] = useState<PredictionRow[]>([]);
@@ -334,22 +329,38 @@ function PredictionsTab() {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("predictions")
-      .select(`
-        id,user_id,match_id,score1_home,score1_away,score2_home,score2_away,score3_home,score3_away,updated_at,
-        profile:profiles(display_name,email,disqualified),
-        match:matches(
-          kickoff_at,status,home_score,home_team_label,away_team_label,
-          home_team:teams!matches_home_team_id_fkey(name),
-          away_team:teams!matches_away_team_id_fkey(name)
-        )
-      `)
-      .in("match_id", openIds)
-      .order("updated_at", { ascending: false });
+    const [{ data: preds, error: predError }, { data: matchRows }] = await Promise.all([
+      supabase
+        .from("predictions")
+        .select("id,user_id,match_id,score1_home,score1_away,score2_home,score2_away,score3_home,score3_away,updated_at")
+        .in("match_id", openIds)
+        .order("updated_at", { ascending: false }),
+      supabase
+        .from("matches")
+        .select("id,kickoff_at,home_team_label,away_team_label,home_team:teams!matches_home_team_id_fkey(name),away_team:teams!matches_away_team_id_fkey(name)")
+        .in("id", openIds),
+    ]);
 
-    if (error) toast.error(error.message);
-    setRows((data ?? []) as unknown as PredictionRow[]);
+    if (predError) {
+      toast.error(predError.message);
+      setRows([]);
+      setLoading(false);
+      return;
+    }
+
+    const predList = preds ?? [];
+    const matchMap = new Map((matchRows ?? []).map((m) => [m.id, m]));
+    const userIds = [...new Set(predList.map((p) => p.user_id))];
+    const { data: profs } = userIds.length > 0
+      ? await supabase.from("profiles").select("id,display_name,email,disqualified").in("id", userIds)
+      : { data: [] };
+    const profMap = new Map((profs ?? []).map((p) => [p.id, p]));
+
+    setRows(predList.map((p) => ({
+      ...p,
+      profile: profMap.get(p.user_id) ?? null,
+      match: matchMap.get(p.match_id) ?? null,
+    })) as PredictionRow[]);
     setLoading(false);
   };
 
@@ -385,19 +396,19 @@ function PredictionsTab() {
           return (
             <div key={r.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-3 text-sm">
               <div className="min-w-0 flex-1">
-                <p className="font-semibold">
-                  {r.profile?.display_name ?? "Utilizator"}
+                <div className="flex flex-wrap items-center gap-2 font-semibold">
+                  <span>{r.profile?.display_name ?? "Utilizator"}</span>
                   {r.profile?.disqualified && (
-                    <Badge variant="outline" className="ml-2 border-[var(--wc-red)]/30 text-[var(--wc-red)]">
+                    <Badge variant="outline" className="border-[var(--wc-red)]/30 text-[var(--wc-red)]">
                       Descalificat
                     </Badge>
                   )}
-                </p>
+                </div>
                 <p className="text-xs text-muted-foreground">{r.profile?.email}</p>
                 <p className="mt-1 text-xs">
                   {kickoff} · {home} vs {away}
                 </p>
-                <p className="mt-0.5 font-mono text-xs text-muted-foreground">{formatPredScores(r)}</p>
+                <p className="mt-0.5 font-mono text-xs text-muted-foreground">{formatPredictionScoresCsv(r)}</p>
               </div>
               <Button
                 size="sm"
@@ -489,8 +500,8 @@ function UsersTab() {
         {users.map((u) => (
           <div key={u.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
             <div className="min-w-0">
-              <p className="flex flex-wrap items-center gap-2 font-semibold">
-                {u.display_name}
+              <div className="flex flex-wrap items-center gap-2 font-semibold">
+                <span>{u.display_name}</span>
                 {u.disqualified ? (
                   <Badge variant="outline" className="border-[var(--wc-red)]/30 bg-[#fde8e9] text-[var(--wc-red)]">
                     Descalificat
@@ -500,7 +511,7 @@ function UsersTab() {
                     Activ
                   </Badge>
                 )}
-              </p>
+              </div>
               <p className="text-xs text-muted-foreground">{u.email}</p>
               {u.disqualified && u.disqualified_reason && (
                 <p className="mt-1 text-xs text-[var(--wc-red)]">Motiv: {u.disqualified_reason}</p>
