@@ -12,6 +12,8 @@ export type SyncResult = {
   teamsUpserted: number;
   matchesUpserted: number;
   matchesSkipped: number;
+  totalTeams: number;
+  totalMatches: number;
 };
 
 function teamExternalId(team: FootballDataTeam): string | null {
@@ -146,8 +148,9 @@ export async function syncFootballDataToSupabase(supabase: DbClient): Promise<Sy
   for (const match of matches) {
     for (const team of [match.homeTeam, match.awayTeam]) {
       const extId = teamExternalId(team);
-      if (!extId || !team.name || seenTeams.has(extId)) continue;
+      if (!extId || !team.name) continue;
       seenTeams.add(extId);
+      if (teamCache.has(extId)) continue;
       await upsertTeam(supabase, team, mapGroupLetter(match.group), teamCache);
       teamsUpserted++;
     }
@@ -163,5 +166,7 @@ export async function syncFootballDataToSupabase(supabase: DbClient): Promise<Sy
     teamsUpserted,
     matchesUpserted,
     matchesSkipped,
+    totalTeams: seenTeams.size,
+    totalMatches: matches.length,
   };
 }
