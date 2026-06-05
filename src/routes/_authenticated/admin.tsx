@@ -10,6 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { importFixtures } from "@/lib/fixtures.functions";
+import { runAutoScoreSyncAdmin } from "@/lib/scores-cron.functions";
 import { importPlayersFromApi, importPlayersFromFile } from "@/lib/players.functions";
 import { PlayerPicker } from "@/components/app/player-picker";
 import { PageHeader } from "@/components/app/page-header";
@@ -85,7 +86,10 @@ function AdminPage() {
 
 function ImportFixturesCard() {
   const importFn = useServerFn(importFixtures);
+  const autoSyncFn = useServerFn(runAutoScoreSyncAdmin);
   const [loading, setLoading] = useState(false);
+  const [autoLoading, setAutoLoading] = useState(false);
+
   const run = async () => {
     setLoading(true);
     try {
@@ -97,18 +101,34 @@ function ImportFixturesCard() {
       setLoading(false);
     }
   };
+
+  const runAutoSync = async () => {
+    setAutoLoading(true);
+    try {
+      const r = await autoSyncFn();
+      toast.success(r.message);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Eroare la sync auto");
+    } finally {
+      setAutoLoading(false);
+    }
+  };
+
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-lg">Import fixtures (football-data.org)</CardTitle>
+        <CardTitle className="text-lg">Import & sync scoruri (football-data.org)</CardTitle>
         <CardDescription>
-          Importă/actualizează echipele și meciurile pentru FIFA World Cup 2026 din API-ul football-data.org.
-          Reapasă oricând pentru a sincroniza rezultate.
+          Import manual fixtures sau verificare automată programată la +3h și +4h după kickoff
+          (Edge Function <code className="text-xs">sync-match-scores</code>, cron la 15 min).
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="flex flex-wrap gap-2">
         <Button onClick={run} disabled={loading}>
-          {loading ? "Se importă..." : "Importă acum"}
+          {loading ? "Se importă..." : "Importă fixtures"}
+        </Button>
+        <Button variant="outline" onClick={runAutoSync} disabled={autoLoading}>
+          {autoLoading ? "Se verifică..." : "Rulează sync auto (test)"}
         </Button>
       </CardContent>
     </Card>

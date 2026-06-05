@@ -1,2 +1,5 @@
 # Înlocuiește cu project-ref-ul tău după migrare
 project_id = "cypadtxnknkyzkphzlpgc"
+
+[functions.sync-match-scores]
+verify_jwt = false

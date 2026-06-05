@@ -25,6 +25,33 @@ FOOTBALL_DATA_API_TOKEN=your-token-here
 
 Migrare necesară: `20260605210000_players_table.sql`
 
+## Sync automat scoruri (+3h / +4h)
+
+După kickoff, scorurile se verifică automat din football-data.org:
+
+1. **+3 ore** — prima verificare (`auto_score_sync_3h_at`)
+2. **+4 ore** — a doua verificare (`auto_score_sync_4h_at`)
+
+Migrare: `20260605220000_auto_score_sync.sql`
+
+### Configurare cron (Supabase)
+
+1. Setează secretele în Supabase Dashboard → Edge Functions → Secrets:
+   - `FOOTBALL_DATA_API_TOKEN`
+   - `CRON_SECRET` (opțional, pentru apeluri manuale)
+   - `SUPABASE_SERVICE_ROLE_KEY` (setat automat în proiect)
+
+2. Deploy funcția:
+   ```bash
+   supabase functions deploy sync-match-scores --no-verify-jwt
+   ```
+
+3. Programează cron **la fiecare 15 minute** (`*/15 * * * *`) către funcția `sync-match-scores`.
+
+4. În `.env` (server / hosting): `CRON_SECRET`, `SUPABASE_SERVICE_ROLE_KEY`, `FOOTBALL_DATA_API_TOKEN`
+
+Scorurile actualizate declanșează recalcularea punctelor; aplicația le afișează via Realtime.
+
 ## Limitări plan gratuit
 
 - Scoruri cu întârziere față de meciurile live

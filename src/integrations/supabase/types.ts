@@ -90,6 +90,8 @@ export type Database = {
       }
       matches: {
         Row: {
+          auto_score_sync_3h_at: string | null
+          auto_score_sync_4h_at: string | null
           away_score: number | null
           away_team_id: string | null
           away_team_label: string | null
@@ -107,6 +109,8 @@ export type Database = {
           venue: string | null
         }
         Insert: {
+          auto_score_sync_3h_at?: string | null
+          auto_score_sync_4h_at?: string | null
           away_score?: number | null
           away_team_id?: string | null
           away_team_label?: string | null
@@ -124,6 +128,8 @@ export type Database = {
           venue?: string | null
         }
         Update: {
+          auto_score_sync_3h_at?: string | null
+          auto_score_sync_4h_at?: string | null
           away_score?: number | null
           away_team_id?: string | null
           away_team_label?: string | null
