@@ -15,7 +15,15 @@ FOOTBALL_DATA_API_TOKEN=your-token-here
 
 ## Utilizare
 
-În **Admin → Meciuri**, apasă **Sync din football-data.org**. Doar utilizatorii din tabelul `admins` pot rula sync-ul.
+În **Admin**, apasă **Importă acum** (fixtures) sau mergi la tab-ul **Jucători** pentru golgheter. Doar utilizatorii din tabelul `admins` pot rula importurile.
+
+### Jucători (golgheter)
+
+- **API:** `GET /v4/competitions/WC/teams?season=2026` (câmpul `squad` pe fiecare echipă)
+- Dacă loturile WC2026 nu sunt publicate încă, se încearcă `GET /v4/teams/{id}` per echipă din DB
+- **Fallback:** import manual CSV/JSON din Admin → Jucători
+
+Migrare necesară: `20260605210000_players_table.sql`
 
 ## Limitări plan gratuit
 

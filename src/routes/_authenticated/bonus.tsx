@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/app/page-header";
+import { PlayerPicker } from "@/components/app/player-picker";
 import { TeamFlag } from "@/components/app/team-flag";
 import { toast } from "sonner";
 import { Star, Trophy, Target } from "lucide-react";
@@ -121,13 +122,12 @@ function BonusPage() {
               </Select>
             </div>
             <div className="space-y-2">
-              <Label className="text-[var(--wc-dark-gray)]">Golgheter (nume jucător)</Label>
-              <Input
+              <Label className="text-[var(--wc-dark-gray)]">Golgheter</Label>
+              <PlayerPicker
                 value={topScorer}
-                onChange={(e) => setTopScorer(e.target.value)}
+                onChange={setTopScorer}
                 disabled={locked}
-                placeholder="ex. Kylian Mbappé"
-                className="h-11 border-[var(--wc-light-gray)]"
+                className="border-[var(--wc-light-gray)]"
               />
             </div>
             {!locked && (

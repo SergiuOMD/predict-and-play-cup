@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { importFixtures } from "@/lib/fixtures.functions";
+import { importPlayersFromApi, importPlayersFromFile } from "@/lib/players.functions";
+import { PlayerPicker } from "@/components/app/player-picker";
 import { PageHeader } from "@/components/app/page-header";
 import { TeamFlag } from "@/components/app/team-flag";
 import { resolveFlagEmoji } from "@/lib/team-flags";
@@ -64,6 +66,7 @@ function AdminPage() {
           <TabsTrigger value="scores">Scoruri</TabsTrigger>
           <TabsTrigger value="predictions">Pronosticuri</TabsTrigger>
           <TabsTrigger value="users">Utilizatori</TabsTrigger>
+          <TabsTrigger value="players">Jucători</TabsTrigger>
           <TabsTrigger value="teams">Echipe</TabsTrigger>
           <TabsTrigger value="matches">Meciuri</TabsTrigger>
           <TabsTrigger value="settings">Setări bonus</TabsTrigger>
@@ -71,6 +74,7 @@ function AdminPage() {
         <TabsContent value="scores"><ScoresTab /></TabsContent>
         <TabsContent value="predictions"><PredictionsTab /></TabsContent>
         <TabsContent value="users"><UsersTab /></TabsContent>
+        <TabsContent value="players"><PlayersTab /></TabsContent>
         <TabsContent value="teams"><TeamsTab /></TabsContent>
         <TabsContent value="matches"><MatchesTab /></TabsContent>
         <TabsContent value="settings"><SettingsTab /></TabsContent>
@@ -543,6 +547,104 @@ function UsersTab() {
   );
 }
 
+function PlayersTab() {
+  const importApiFn = useServerFn(importPlayersFromApi);
+  const importFileFn = useServerFn(importPlayersFromFile);
+  const [count, setCount] = useState<number | null>(null);
+  const [apiLoading, setApiLoading] = useState(false);
+  const [fileLoading, setFileLoading] = useState(false);
+
+  const loadCount = async () => {
+    const { count: c } = await supabase.from("players").select("id", { count: "exact", head: true });
+    setCount(c ?? 0);
+  };
+
+  useEffect(() => { loadCount(); }, []);
+
+  const runApiImport = async () => {
+    setApiLoading(true);
+    try {
+      const r = await importApiFn();
+      toast.success(r.message);
+      loadCount();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Eroare la import API");
+    } finally {
+      setApiLoading(false);
+    }
+  };
+
+  const onFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setFileLoading(true);
+    try {
+      const content = await file.text();
+      const format = file.name.toLowerCase().endsWith(".json") ? "json" as const : "csv" as const;
+      const r = await importFileFn({ data: { content, format } });
+      toast.success(r.message);
+      loadCount();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Eroare la import fișier");
+    } finally {
+      setFileLoading(false);
+      e.target.value = "";
+    }
+  };
+
+  const clearAll = async () => {
+    if (!confirm("Ștergi toți jucătorii importați?")) return;
+    const { error } = await supabase.from("players").delete().neq("id", "00000000-0000-0000-0000-000000000000");
+    if (error) return toast.error(error.message);
+    toast.success("Lista de jucători a fost golită");
+    loadCount();
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Jucători (golgheter)</CardTitle>
+        <CardDescription>
+          {count === null ? "Se încarcă..." : `${count} jucători în baza de date`}
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="rounded-lg border bg-muted/30 p-4 text-sm text-muted-foreground">
+          <p className="font-medium text-foreground">Import din API (football-data.org)</p>
+          <p className="mt-1">
+            Endpoint: <code className="text-xs">/competitions/WC/teams?season=2026</code> sau lot per echipă.
+            Loturile WC2026 pot fi indisponibile încă — în acest caz folosește import manual.
+          </p>
+          <Button className="mt-3" onClick={runApiImport} disabled={apiLoading}>
+            {apiLoading ? "Se importă (poate dura câteva minute)..." : "Importă jucători din API"}
+          </Button>
+        </div>
+
+        <div className="rounded-lg border p-4 text-sm">
+          <p className="font-medium">Import manual CSV / JSON</p>
+          <p className="mt-1 text-muted-foreground">
+            CSV: <code className="text-xs">name,team,position</code> sau doar <code className="text-xs">name</code> pe linie.
+          </p>
+          <p className="mt-1 text-muted-foreground">
+            JSON: array de obiecte cu câmpurile <code className="text-xs">name</code>, opțional <code className="text-xs">team</code> sau <code className="text-xs">team_code</code>
+          </p>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button asChild variant="outline" disabled={fileLoading}>
+              <label className="cursor-pointer">
+                {fileLoading ? "Se importă..." : "Alege fișier CSV/JSON"}
+                <input type="file" accept=".csv,.json,.txt" className="hidden" onChange={onFile} />
+              </label>
+            </Button>
+            <Button variant="ghost" onClick={clearAll} disabled={!count}>
+              Golește lista
+            </Button>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
 function SettingsTab() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [s, setS] = useState({ bonus_lock_at: "", champion_team_id: "", top_scorer_name: "", champion_points: 5, top_scorer_points: 5 });
@@ -587,7 +689,14 @@ function SettingsTab() {
             <SelectContent>{teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
           </Select>
         </div>
-        <div><Label>Golgheter real</Label><Input value={s.top_scorer_name} onChange={(e) => setS({ ...s, top_scorer_name: e.target.value })} /></div>
+        <div>
+          <Label>Golgheter real</Label>
+          <PlayerPicker
+            value={s.top_scorer_name}
+            onChange={(v) => setS({ ...s, top_scorer_name: v })}
+            placeholder="Alege golgheterul real"
+          />
+        </div>
         <div className="grid grid-cols-2 gap-3">
           <div><Label>Pct campion</Label><Input type="number" value={s.champion_points} onChange={(e) => setS({ ...s, champion_points: Number(e.target.value) })} /></div>
           <div><Label>Pct golgheter</Label><Input type="number" value={s.top_scorer_points} onChange={(e) => setS({ ...s, top_scorer_points: Number(e.target.value) })} /></div>

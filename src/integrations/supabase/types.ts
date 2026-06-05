@@ -157,6 +157,50 @@ export type Database = {
           },
         ]
       }
+      players: {
+        Row: {
+          created_at: string
+          external_id: string | null
+          id: string
+          name: string
+          nationality: string | null
+          position: string | null
+          shirt_number: number | null
+          team_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          name: string
+          nationality?: string | null
+          position?: string | null
+          shirt_number?: number | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          external_id?: string | null
+          id?: string
+          name?: string
+          nationality?: string | null
+          position?: string | null
+          shirt_number?: number | null
+          team_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "players_team_id_fkey"
+            columns: ["team_id"]
+            isOneToOne: false
+            referencedRelation: "teams"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       predictions: {
         Row: {
           created_at: string
