@@ -74,7 +74,7 @@ function ScoresTab() {
 
   const save = async (m: Match, home: number, away: number, status: string) => {
     const { error } = await supabase.from("matches").update({
-      home_score: home, away_score: away, status,
+      home_score: home, away_score: away, status: status as "scheduled" | "live" | "finished" | "postponed",
     }).eq("id", m.id);
     if (error) return toast.error(error.message);
     toast.success("Scor salvat & puncte recalculate");
