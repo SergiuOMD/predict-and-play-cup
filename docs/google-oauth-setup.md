@@ -34,7 +34,7 @@ Proiect: `kbbqhdhtefhufnpscodv` (Lovable) sau noul proiect după migrare.
 npm run dev
 ```
 
-Deschide `/auth` → **Continuă cu Google**. După consimțământ, revii la `/auth/callback` și ești redirectat la `/dashboard`.
+Deschide `/auth` → **Continuă cu Google**. După consimțământ, revii la `/auth/callback` și ești redirectat la `/matches`.
 
 ## Note
 

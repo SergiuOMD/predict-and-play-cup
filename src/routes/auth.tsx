@@ -62,15 +62,20 @@ function AuthPage() {
     const password = String(fd.get("password"));
     const display_name = String(fd.get("name"));
     const invite_code = String(fd.get("invite"));
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: { data: { display_name, invite_code }, emailRedirectTo: window.location.origin + "/matches" },
     });
     setLoading(false);
     if (error) return toast.error(error.message);
-    toast.success("Cont creat! Te poți autentifica.");
-    navigate({ to: "/matches" });
+    if (data.session) {
+      toast.success("Cont creat!");
+      navigate({ to: "/matches" });
+      return;
+    }
+    toast.success("Cont creat! Verifică emailul pentru confirmare, apoi login.");
+    navigate({ to: "/auth", search: { tab: "login" } });
   };
 
   return (
@@ -108,7 +113,9 @@ function AuthPage() {
               <Trophy className="h-6 w-6 text-[oklch(0.22_0.08_260)]" />
             </div>
             <CardTitle className="text-2xl">Bun venit la totalizator</CardTitle>
-            <CardDescription>Autentifică-te ca să trimiți pronosticuri</CardDescription>
+            <CardDescription>
+              Autentifică-te ca să trimiți pronosticuri. Contul de admin e separat — trebuie să te înregistrezi sau să te loghezi mai întâi.
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue={tab ?? "login"}>

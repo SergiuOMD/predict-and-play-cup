@@ -32,7 +32,7 @@ function AuthCallbackPage() {
         return;
       }
 
-      const next = search.next?.startsWith("/") ? search.next : "/dashboard";
+      const next = search.next?.startsWith("/") ? search.next : "/matches";
       const code = new URLSearchParams(window.location.search).get("code");
 
       if (code) {

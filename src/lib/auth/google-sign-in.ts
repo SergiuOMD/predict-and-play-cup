@@ -1,7 +1,7 @@
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable";
 
-const DEFAULT_POST_AUTH_PATH = "/dashboard";
+const DEFAULT_POST_AUTH_PATH = "/matches";
 
 function getPostAuthUrl() {
   if (typeof window === "undefined") return DEFAULT_POST_AUTH_PATH;
