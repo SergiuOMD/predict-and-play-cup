@@ -3,6 +3,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 import { fetchWorldCupMatches } from "./client.server";
+import { resolveFlagEmoji } from "@/lib/team-flags";
 import { mapGroupLetter, mapStage, mapStatus } from "./mappers";
 import type { FootballDataMatch, FootballDataTeam } from "./types";
 
@@ -37,12 +38,15 @@ async function upsertTeam(
     .eq("external_id", extId)
     .maybeSingle();
 
+  const flagEmoji = resolveFlagEmoji(team.tla, team.name);
+
   if (byExternal) {
     await supabase
       .from("teams")
       .update({
         name: team.name,
         code: team.tla,
+        flag_emoji: flagEmoji,
         group_letter: groupLetter,
       })
       .eq("id", byExternal.id);
@@ -62,6 +66,7 @@ async function upsertTeam(
       .update({
         external_id: extId,
         code: team.tla,
+        flag_emoji: flagEmoji,
         group_letter: groupLetter,
       })
       .eq("id", byName.id);
@@ -75,6 +80,7 @@ async function upsertTeam(
       external_id: extId,
       name: team.name,
       code: team.tla,
+      flag_emoji: flagEmoji,
       group_letter: groupLetter,
     })
     .select("id")

@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/app/page-header";
+import { TeamFlag } from "@/components/app/team-flag";
 import { MatchStatusBadge } from "@/components/app/match-status-badge";
 import { getMatchStatus } from "@/lib/match-utils";
 import { Calendar, ChevronRight } from "lucide-react";
@@ -19,8 +20,8 @@ type Match = {
   away_score: number | null;
   home_team_label: string | null;
   away_team_label: string | null;
-  home_team: { name: string; flag_emoji: string | null } | null;
-  away_team: { name: string; flag_emoji: string | null } | null;
+  home_team: { name: string; code: string | null; flag_emoji: string | null } | null;
+  away_team: { name: string; code: string | null; flag_emoji: string | null } | null;
 };
 
 export const Route = createFileRoute("/_authenticated/matches/")({
@@ -34,7 +35,7 @@ function MatchesPage() {
   const fetchMatches = async () => {
     const { data } = await supabase
       .from("matches")
-      .select("id,stage,group_letter,kickoff_at,status,home_score,away_score,home_team_label,away_team_label,home_team:teams!matches_home_team_id_fkey(name,flag_emoji),away_team:teams!matches_away_team_id_fkey(name,flag_emoji)")
+      .select("id,stage,group_letter,kickoff_at,status,home_score,away_score,home_team_label,away_team_label,home_team:teams!matches_home_team_id_fkey(name,code,flag_emoji),away_team:teams!matches_away_team_id_fkey(name,code,flag_emoji)")
       .order("kickoff_at", { ascending: true });
     setMatches((data as unknown as Match[]) ?? []);
   };
@@ -108,11 +109,13 @@ function MatchesPage() {
 
 function TeamCell({
   name,
+  code,
   flag,
   side,
 }: {
   name: string;
-  flag: string;
+  code?: string | null;
+  flag?: string | null;
   side: "home" | "away";
 }) {
   const isHome = side === "home";
@@ -123,9 +126,7 @@ function TeamCell({
         isHome ? "flex-row-reverse justify-end" : "flex-row justify-start",
       )}
     >
-      <span className="shrink-0 text-2xl leading-none" aria-hidden>
-        {flag || "🏳️"}
-      </span>
+      <TeamFlag code={code} name={name} emoji={flag} size="lg" />
       <span
         className={cn(
           "min-w-0 truncate text-sm font-bold leading-tight sm:text-base",
@@ -141,8 +142,10 @@ function TeamCell({
 function MatchRow({ m }: { m: Match }) {
   const homeName = m.home_team?.name ?? m.home_team_label ?? "TBD";
   const awayName = m.away_team?.name ?? m.away_team_label ?? "TBD";
-  const homeFlag = m.home_team?.flag_emoji ?? "";
-  const awayFlag = m.away_team?.flag_emoji ?? "";
+  const homeCode = m.home_team?.code ?? null;
+  const awayCode = m.away_team?.code ?? null;
+  const homeFlag = m.home_team?.flag_emoji ?? null;
+  const awayFlag = m.away_team?.flag_emoji ?? null;
   const time = new Date(m.kickoff_at).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
   const matchStatus = getMatchStatus(m.status, m.kickoff_at, m.home_score);
   const finished = matchStatus === "finished";
@@ -171,11 +174,11 @@ function MatchRow({ m }: { m: Match }) {
         </div>
 
         <div className="grid grid-cols-[minmax(0,1fr)_5.5rem_minmax(0,1fr)] items-center gap-x-3 sm:gap-x-6">
-          <TeamCell name={homeName} flag={homeFlag} side="home" />
+          <TeamCell name={homeName} code={homeCode} flag={homeFlag} side="home" />
           <div className="flex h-11 w-[5.5rem] shrink-0 items-center justify-center self-center rounded-xl bg-gradient-hermes text-xs font-black tabular-nums text-white shadow-sm sm:text-sm">
             {finished ? `${m.home_score}-${m.away_score}` : "VS"}
           </div>
-          <TeamCell name={awayName} flag={awayFlag} side="away" />
+          <TeamCell name={awayName} code={awayCode} flag={awayFlag} side="away" />
         </div>
 
         <div className="mt-3 flex justify-end opacity-0 transition-opacity group-hover:opacity-100">

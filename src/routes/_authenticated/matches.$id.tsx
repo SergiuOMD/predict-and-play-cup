@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { MatchStatusBadge } from "@/components/app/match-status-badge";
+import { TeamFlag } from "@/components/app/team-flag";
 import { getMatchStatus } from "@/lib/match-utils";
 import { toast } from "sonner";
 import { ArrowLeft, Users } from "lucide-react";
@@ -20,8 +21,8 @@ type Match = {
   away_score: number | null;
   home_team_label: string | null;
   away_team_label: string | null;
-  home_team: { name: string; flag_emoji: string | null } | null;
-  away_team: { name: string; flag_emoji: string | null } | null;
+  home_team: { name: string; code: string | null; flag_emoji: string | null } | null;
+  away_team: { name: string; code: string | null; flag_emoji: string | null } | null;
 };
 type Pred = {
   score1_home: number; score1_away: number;
@@ -58,7 +59,7 @@ function MatchDetail() {
   const load = async () => {
     const { data: m, error } = await supabase
       .from("matches")
-      .select("id,kickoff_at,status,group_letter,stage,home_score,away_score,home_team_label,away_team_label,home_team:teams!matches_home_team_id_fkey(name,flag_emoji),away_team:teams!matches_away_team_id_fkey(name,flag_emoji)")
+      .select("id,kickoff_at,status,group_letter,stage,home_score,away_score,home_team_label,away_team_label,home_team:teams!matches_home_team_id_fkey(name,code,flag_emoji),away_team:teams!matches_away_team_id_fkey(name,code,flag_emoji)")
       .eq("id", id).maybeSingle();
     setLoading(false);
     if (error || !m) {
@@ -128,8 +129,10 @@ function MatchDetail() {
   const finished = matchStatus === "finished";
   const homeName = match.home_team?.name ?? match.home_team_label ?? "TBD";
   const awayName = match.away_team?.name ?? match.away_team_label ?? "TBD";
-  const homeFlag = match.home_team?.flag_emoji ?? "";
-  const awayFlag = match.away_team?.flag_emoji ?? "";
+  const homeCode = match.home_team?.code ?? null;
+  const awayCode = match.away_team?.code ?? null;
+  const homeFlag = match.home_team?.flag_emoji ?? null;
+  const awayFlag = match.away_team?.flag_emoji ?? null;
   const scoreStr = finished ? `${match.home_score}-${match.away_score}` : undefined;
 
   const submit = async (e: React.FormEvent) => {
@@ -182,8 +185,8 @@ function MatchDetail() {
             />
           </div>
           <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-4 sm:gap-8">
-            <div className="text-center sm:text-right">
-              <div className="text-4xl sm:text-5xl">{homeFlag || "🏳️"}</div>
+            <div className="flex flex-col items-center sm:items-end">
+              <TeamFlag code={homeCode} name={homeName} emoji={homeFlag} size="xl" />
               <p className="mt-2 text-lg font-bold sm:text-xl">{homeName}</p>
             </div>
             <div className="rounded-2xl bg-white/15 px-6 py-4 text-center backdrop-blur">
@@ -196,8 +199,8 @@ function MatchDetail() {
                 {new Date(match.kickoff_at).toLocaleString("ro-RO")}
               </p>
             </div>
-            <div className="text-center sm:text-left">
-              <div className="text-4xl sm:text-5xl">{awayFlag || "🏳️"}</div>
+            <div className="flex flex-col items-center sm:items-start">
+              <TeamFlag code={awayCode} name={awayName} emoji={awayFlag} size="xl" />
               <p className="mt-2 text-lg font-bold sm:text-xl">{awayName}</p>
             </div>
           </div>

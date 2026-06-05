@@ -6,10 +6,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PageHeader } from "@/components/app/page-header";
+import { TeamFlag } from "@/components/app/team-flag";
 import { toast } from "sonner";
 import { Star, Trophy, Target } from "lucide-react";
 
-type Team = { id: string; name: string; flag_emoji: string | null };
+type Team = { id: string; name: string; code: string | null; flag_emoji: string | null };
 type Settings = {
   bonus_lock_at: string | null;
   champion_team_id: string | null;
@@ -32,7 +33,7 @@ function BonusPage() {
 
   const load = async () => {
     const [{ data: t }, { data: s }, { data: u }] = await Promise.all([
-      supabase.from("teams").select("id,name,flag_emoji").order("name"),
+      supabase.from("teams").select("id,name,code,flag_emoji").order("name"),
       supabase.from("tournament_settings").select("*").eq("id", 1).maybeSingle(),
       supabase.auth.getUser(),
     ]);
@@ -109,7 +110,12 @@ function BonusPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {teams.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>{t.flag_emoji} {t.name}</SelectItem>
+                    <SelectItem key={t.id} value={t.id}>
+                      <span className="flex items-center gap-2">
+                        <TeamFlag code={t.code} name={t.name} emoji={t.flag_emoji} size="sm" />
+                        {t.name}
+                      </span>
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>

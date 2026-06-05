@@ -2,10 +2,11 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { PageHeader } from "@/components/app/page-header";
+import { TeamFlag } from "@/components/app/team-flag";
 import { groupAccentColor } from "@/lib/match-utils";
 import { Grid3x3 } from "lucide-react";
 
-type Team = { id: string; name: string; flag_emoji: string | null; group_letter: string | null };
+type Team = { id: string; name: string; code: string | null; flag_emoji: string | null; group_letter: string | null };
 
 export const Route = createFileRoute("/_authenticated/groups")({
   head: () => ({ meta: [{ title: "Grupe · ORBICO WC2026" }] }),
@@ -60,7 +61,7 @@ function GroupsPage() {
               <ul className="divide-y">
                 {list.map((t) => (
                   <li key={t.id} className="flex items-center gap-3 px-4 py-2.5 transition-colors hover:bg-muted/50">
-                    <span className="text-xl">{t.flag_emoji ?? "🏳️"}</span>
+                    <TeamFlag code={t.code} name={t.name} emoji={t.flag_emoji} size="md" />
                     <span className="text-sm font-medium">{t.name}</span>
                   </li>
                 ))}

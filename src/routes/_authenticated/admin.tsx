@@ -11,6 +11,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { toast } from "sonner";
 import { importFixtures } from "@/lib/fixtures.functions";
 import { PageHeader } from "@/components/app/page-header";
+import { TeamFlag } from "@/components/app/team-flag";
+import { resolveFlagEmoji } from "@/lib/team-flags";
 import { Shield } from "lucide-react";
 
 type Match = {
@@ -166,10 +168,12 @@ function TeamsTab() {
   const add = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     const fd = new FormData(e.currentTarget);
+    const name = String(fd.get("name"));
+    const code = String(fd.get("code")) || null;
     const { error } = await supabase.from("teams").insert({
-      name: String(fd.get("name")),
-      code: String(fd.get("code")) || null,
-      flag_emoji: String(fd.get("flag")) || null,
+      name,
+      code,
+      flag_emoji: String(fd.get("flag")) || resolveFlagEmoji(code, name),
       group_letter: String(fd.get("group")) || null,
     });
     if (error) return toast.error(error.message);
@@ -189,7 +193,11 @@ function TeamsTab() {
       <div className="space-y-1">
         {teams.map((t) => (
           <div key={t.id} className="flex items-center justify-between rounded border p-2 text-sm">
-            <span>{t.flag_emoji} {t.name} {t.group_letter && <span className="text-muted-foreground">· Grupa {t.group_letter}</span>}</span>
+            <span className="flex items-center gap-2">
+              <TeamFlag code={t.code} name={t.name} emoji={t.flag_emoji} size="sm" />
+              {t.name}
+              {t.group_letter && <span className="text-muted-foreground">· Grupa {t.group_letter}</span>}
+            </span>
             <Button size="sm" variant="ghost" onClick={async () => {
               await supabase.from("teams").delete().eq("id", t.id); load();
             }}>Șterge</Button>
