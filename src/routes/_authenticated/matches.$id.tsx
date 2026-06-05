@@ -1,11 +1,14 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { MatchStatusBadge } from "@/components/app/match-status-badge";
+import { getMatchStatus } from "@/lib/match-utils";
 import { toast } from "sonner";
+import { ArrowLeft, Users } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Match = {
   id: string;
@@ -42,7 +45,13 @@ function MatchDetail() {
     points: 0,
   });
   const [hasPred, setHasPred] = useState(false);
-  const [allPreds, setAllPreds] = useState<Array<{ display_name: string; avatar_url: string | null; score1_home: number; score1_away: number; score2_home: number; score2_away: number; score3_home: number; score3_away: number; points: number }>>([]);
+  const [allPreds, setAllPreds] = useState<Array<{
+    display_name: string;
+    score1_home: number; score1_away: number;
+    score2_home: number; score2_away: number;
+    score3_home: number; score3_away: number;
+    points: number;
+  }>>([]);
   const [saving, setSaving] = useState(false);
 
   const load = async () => {
@@ -58,7 +67,6 @@ function MatchDetail() {
       if (p) { setPred(p); setHasPred(true); }
     }
 
-    // Try to load everyone's predictions (will only work after kickoff per RLS)
     const { data: all } = await supabase
       .from("predictions")
       .select("user_id,score1_home,score1_away,score2_home,score2_away,score3_home,score3_away,points")
@@ -73,7 +81,6 @@ function MatchDetail() {
         score3_home: r.score3_home, score3_away: r.score3_away,
         points: r.points,
         display_name: pmap.get(r.user_id)?.display_name ?? "Anonim",
-        avatar_url: pmap.get(r.user_id)?.avatar_url ?? null,
       })));
     }
   };
@@ -88,12 +95,20 @@ function MatchDetail() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [id]);
 
-  if (!match) return <div>Se încarcă...</div>;
+  if (!match) {
+    return (
+      <div className="app-card animate-pulse p-12 text-center text-muted-foreground">Se încarcă...</div>
+    );
+  }
 
-  const locked = new Date(match.kickoff_at).getTime() - Date.now() < 60 * 60 * 1000;
-  const finished = match.status === "finished" && match.home_score !== null;
-  const home = match.home_team ? `${match.home_team.flag_emoji ?? ""} ${match.home_team.name}` : (match.home_team_label ?? "TBD");
-  const away = match.away_team ? `${match.away_team.flag_emoji ?? ""} ${match.away_team.name}` : (match.away_team_label ?? "TBD");
+  const matchStatus = getMatchStatus(match.status, match.kickoff_at, match.home_score);
+  const locked = matchStatus === "locked" || matchStatus === "finished" || matchStatus === "live";
+  const finished = matchStatus === "finished";
+  const homeName = match.home_team?.name ?? match.home_team_label ?? "TBD";
+  const awayName = match.away_team?.name ?? match.away_team_label ?? "TBD";
+  const homeFlag = match.home_team?.flag_emoji ?? "";
+  const awayFlag = match.away_team?.flag_emoji ?? "";
+  const scoreStr = finished ? `${match.home_score}-${match.away_score}` : undefined;
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -113,7 +128,7 @@ function MatchDetail() {
   const numField = (key: keyof Pred) => (
     <Input
       type="number" min={0} max={30} required
-      className="w-16 text-center"
+      className="h-12 w-14 border-[var(--wc-light-gray)] text-center text-lg font-bold"
       value={pred[key] as number}
       onChange={(e) => setPred({ ...pred, [key]: Number(e.target.value) || 0 })}
       disabled={locked}
@@ -122,74 +137,125 @@ function MatchDetail() {
 
   return (
     <div className="space-y-6">
-      <Button variant="ghost" size="sm" onClick={() => navigate({ to: "/matches" })}>← Înapoi</Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="gap-1 text-[var(--wc-hermes)] hover:bg-[var(--wc-hermes)]/10"
+        onClick={() => navigate({ to: "/matches" })}
+      >
+        <ArrowLeft className="h-4 w-4" /> Înapoi la meciuri
+      </Button>
 
-      <Card>
-        <CardHeader>
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <CardTitle className="text-lg leading-snug sm:text-xl">{home} vs {away}</CardTitle>
-            <div className="flex flex-wrap gap-2">
-              {match.group_letter && <Badge variant="outline">Grupa {match.group_letter}</Badge>}
-              {finished ? <Badge>Final {match.home_score}-{match.away_score}</Badge>
-                : locked ? <Badge variant="destructive">Blocat</Badge>
-                : <Badge variant="outline">Deschis</Badge>}
+      {/* Hero meci */}
+      <div className="app-card overflow-hidden">
+        <div className="bg-gradient-hermes px-6 py-8 text-white sm:px-10 sm:py-10">
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {match.group_letter && (
+              <Badge className="bg-white/15 text-white hover:bg-white/15">Grupa {match.group_letter}</Badge>
+            )}
+            <MatchStatusBadge
+              status={matchStatus}
+              score={scoreStr}
+              className="border-white/30 bg-white/10 text-white"
+            />
+          </div>
+          <div className="mt-6 grid grid-cols-[1fr_auto_1fr] items-center gap-4 sm:gap-8">
+            <div className="text-center sm:text-right">
+              <div className="text-4xl sm:text-5xl">{homeFlag || "🏳️"}</div>
+              <p className="mt-2 text-lg font-bold sm:text-xl">{homeName}</p>
+            </div>
+            <div className="rounded-2xl bg-white/15 px-6 py-4 text-center backdrop-blur">
+              {finished ? (
+                <p className="text-4xl font-black tabular-nums">{match.home_score} - {match.away_score}</p>
+              ) : (
+                <p className="text-3xl font-black">VS</p>
+              )}
+              <p className="mt-1 text-xs text-white/70">
+                {new Date(match.kickoff_at).toLocaleString("ro-RO")}
+              </p>
+            </div>
+            <div className="text-center sm:text-left">
+              <div className="text-4xl sm:text-5xl">{awayFlag || "🏳️"}</div>
+              <p className="mt-2 text-lg font-bold sm:text-xl">{awayName}</p>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {new Date(match.kickoff_at).toLocaleString("ro-RO")}
-          </p>
-        </CardHeader>
-        <CardContent>
-          <form method="post" onSubmit={submit} className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Introdu 3 pronosticuri. 1 punct pentru fiecare scor exact (max 3 puncte).
-              {locked && <span className="ml-1 text-destructive">Pronosticurile sunt blocate cu 1h înainte de kickoff.</span>}
-            </p>
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="rounded-lg border p-3 sm:border-0 sm:p-0">
-                <div className="mb-2 text-center text-xs font-medium text-muted-foreground sm:hidden">Pronostic {i}</div>
-                <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-3">
-                  <span className="hidden w-12 text-sm text-muted-foreground sm:inline">P{i}</span>
-                  <span className="hidden w-32 truncate text-right sm:inline">{home}</span>
-                  <div className="flex items-center gap-2">
-                    {numField(`score${i}_home` as keyof Pred)}
-                    <span>-</span>
-                    {numField(`score${i}_away` as keyof Pred)}
-                  </div>
-                  <span className="hidden w-32 truncate sm:inline">{away}</span>
-                  <p className="text-center text-xs text-muted-foreground sm:hidden">
-                    {home} vs {away}
-                  </p>
+        </div>
+      </div>
+
+      {/* Formular pronosticuri */}
+      <div className="app-card p-6 sm:p-8">
+        <h2 className="text-lg font-bold text-[var(--wc-hermes)]">Pronosticurile tale</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Introdu 3 scoruri. 1 punct pentru fiecare exact (max 3 puncte).
+          {matchStatus === "locked" && (
+            <span className="ml-1 font-medium text-[var(--wc-red)]">
+              Blocate cu 1h înainte de kickoff.
+            </span>
+          )}
+        </p>
+
+        <form method="post" onSubmit={submit} className="mt-6 space-y-4">
+          {[1, 2, 3].map((i) => (
+            <div
+              key={i}
+              className="rounded-xl border border-[var(--wc-light-gray)] bg-muted/30 p-4"
+            >
+              <p className="mb-3 text-center text-xs font-bold uppercase tracking-wider text-[var(--wc-hermes)]">
+                Pronostic {i}
+              </p>
+              <div className="flex items-center justify-center gap-3">
+                <span className="hidden w-28 truncate text-right text-sm font-medium sm:inline">{homeName}</span>
+                <div className="flex items-center gap-2">
+                  {numField(`score${i}_home` as keyof Pred)}
+                  <span className="text-lg font-bold text-muted-foreground">:</span>
+                  {numField(`score${i}_away` as keyof Pred)}
                 </div>
+                <span className="hidden w-28 truncate text-sm font-medium sm:inline">{awayName}</span>
               </div>
-            ))}
-            {!locked && <Button type="submit" disabled={saving} className="w-full">{hasPred ? "Actualizează" : "Trimite"}</Button>}
-            {hasPred && finished && (
-              <div className="text-center text-sm">
-                Ai obținut <span className="font-bold text-primary">{pred.points}</span> {pred.points === 1 ? "punct" : "puncte"}
-              </div>
-            )}
-          </form>
-        </CardContent>
-      </Card>
+            </div>
+          ))}
+
+          {!locked && (
+            <Button type="submit" disabled={saving} className="h-12 w-full bg-gradient-hermes text-base font-semibold hover:opacity-90">
+              {saving ? "Se salvează..." : hasPred ? "Actualizează pronosticurile" : "Trimite pronosticurile"}
+            </Button>
+          )}
+
+          {hasPred && finished && (
+            <div className="rounded-lg bg-[var(--wc-green)]/10 px-4 py-3 text-center">
+              Ai obținut{" "}
+              <span className="text-xl font-black text-[var(--wc-green)]">{pred.points}</span>{" "}
+              {pred.points === 1 ? "punct" : "puncte"}
+            </div>
+          )}
+        </form>
+      </div>
 
       {(locked || finished) && allPreds.length > 0 && (
-        <Card>
-          <CardHeader><CardTitle className="text-lg">Pronosticurile tuturor</CardTitle></CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {allPreds.sort((a, b) => b.points - a.points).map((p, i) => (
-                <div key={i} className="flex flex-col gap-2 rounded border p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
-                  <span className="font-medium">{p.display_name}</span>
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {p.score1_home}-{p.score1_away} · {p.score2_home}-{p.score2_away} · {p.score3_home}-{p.score3_away}
-                  </span>
-                  <Badge className="w-fit" variant={p.points > 0 ? "default" : "secondary"}>{p.points} pct</Badge>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="app-card overflow-hidden">
+          <div className="flex items-center gap-2 border-b bg-[var(--wc-hermes)]/5 px-5 py-3">
+            <Users className="h-4 w-4 text-[var(--wc-hermes)]" />
+            <h2 className="font-bold text-[var(--wc-hermes)]">Pronosticurile tuturor</h2>
+          </div>
+          <div className="divide-y">
+            {allPreds.sort((a, b) => b.points - a.points).map((p, i) => (
+              <div key={i} className="flex flex-col gap-2 px-5 py-4 sm:flex-row sm:items-center sm:justify-between">
+                <span className="font-semibold">{p.display_name}</span>
+                <span className="font-mono text-xs text-muted-foreground">
+                  {p.score1_home}-{p.score1_away} · {p.score2_home}-{p.score2_away} · {p.score3_home}-{p.score3_away}
+                </span>
+                <Badge
+                  className={cn(
+                    "w-fit font-bold",
+                    p.points > 0 ? "bg-[var(--wc-green)] hover:bg-[var(--wc-green)]" : "bg-muted text-muted-foreground",
+                  )}
+                >
+                  {p.points} pct
+                </Badge>
+              </div>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

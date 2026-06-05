@@ -1,9 +1,12 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PageHeader } from "@/components/app/page-header";
+import { MatchStatusBadge } from "@/components/app/match-status-badge";
+import { getMatchStatus } from "@/lib/match-utils";
+import { Calendar } from "lucide-react";
 
 type Match = {
   id: string;
@@ -20,7 +23,7 @@ type Match = {
 };
 
 export const Route = createFileRoute("/_authenticated/matches")({
-  head: () => ({ meta: [{ title: "Meciuri · OMD WC2026" }] }),
+  head: () => ({ meta: [{ title: "Meciuri · ORBICO WC2026" }] }),
   component: MatchesPage,
 });
 
@@ -45,32 +48,55 @@ function MatchesPage() {
   }, []);
 
   if (matches === null) {
-    return <div className="space-y-2">{[...Array(5)].map((_, i) => <Skeleton key={i} className="h-20" />)}</div>;
+    return (
+      <div className="space-y-4">
+        <Skeleton className="h-16 w-full rounded-xl" />
+        {[...Array(5)].map((_, i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+      </div>
+    );
   }
 
   if (matches.length === 0) {
     return (
-      <Card className="p-8 text-center">
-        <h2 className="font-semibold">Niciun meci încărcat încă</h2>
-        <p className="mt-2 text-sm text-muted-foreground">Adminul va încărca fixtures-urile în curând.</p>
-      </Card>
+      <>
+        <PageHeader
+          title="Meciuri"
+          description="Pronostichează scorurile pentru fiecare meci al turneului."
+          icon={<Calendar className="h-5 w-5 text-white" />}
+        />
+        <div className="app-card p-10 text-center">
+          <Calendar className="mx-auto h-12 w-12 text-[var(--wc-hermes)]/40" />
+          <h2 className="mt-4 text-lg font-bold">Niciun meci încărcat încă</h2>
+          <p className="mt-2 text-sm text-muted-foreground">Adminul va încărca fixtures-urile în curând.</p>
+        </div>
+      </>
     );
   }
 
-  // Group by date
   const groups = matches.reduce<Record<string, Match[]>>((acc, m) => {
     const d = new Date(m.kickoff_at).toLocaleDateString("ro-RO", { weekday: "long", day: "numeric", month: "long" });
     (acc[d] ??= []).push(m);
     return acc;
   }, {});
 
+  const openCount = matches.filter((m) => getMatchStatus(m.status, m.kickoff_at, m.home_score) === "open").length;
+
   return (
     <div className="space-y-6">
-      <h1 className="text-2xl font-bold">Meciuri</h1>
+      <PageHeader
+        title="Meciuri"
+        description={`${matches.length} meciuri · ${openCount} deschise pentru pronostic`}
+        icon={<Calendar className="h-5 w-5 text-white" />}
+      />
+
       {Object.entries(groups).map(([date, list]) => (
-        <section key={date} className="space-y-2">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">{date}</h2>
-          <div className="space-y-2">
+        <section key={date} className="space-y-3">
+          <div className="flex items-center gap-3">
+            <div className="h-px flex-1 bg-[var(--wc-light-gray)]" />
+            <h2 className="shrink-0 text-xs font-bold uppercase tracking-widest text-[var(--wc-hermes)]">{date}</h2>
+            <div className="h-px flex-1 bg-[var(--wc-light-gray)]" />
+          </div>
+          <div className="space-y-3">
             {list.map((m) => <MatchRow key={m.id} m={m} />)}
           </div>
         </section>
@@ -80,29 +106,52 @@ function MatchesPage() {
 }
 
 function MatchRow({ m }: { m: Match }) {
-  const home = m.home_team ? `${m.home_team.flag_emoji ?? ""} ${m.home_team.name}` : (m.home_team_label ?? "TBD");
-  const away = m.away_team ? `${m.away_team.flag_emoji ?? ""} ${m.away_team.name}` : (m.away_team_label ?? "TBD");
+  const homeName = m.home_team?.name ?? m.home_team_label ?? "TBD";
+  const awayName = m.away_team?.name ?? m.away_team_label ?? "TBD";
+  const homeFlag = m.home_team?.flag_emoji ?? "";
+  const awayFlag = m.away_team?.flag_emoji ?? "";
   const time = new Date(m.kickoff_at).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
-  const locked = new Date(m.kickoff_at).getTime() - Date.now() < 60 * 60 * 1000;
-  const finished = m.status === "finished" && m.home_score !== null;
+  const matchStatus = getMatchStatus(m.status, m.kickoff_at, m.home_score);
+  const finished = matchStatus === "finished";
+  const score = finished ? `${m.home_score} - ${m.away_score}` : undefined;
 
   return (
-    <Link to="/matches/$id" params={{ id: m.id }}>
-      <Card className="flex flex-col gap-3 p-4 transition-colors hover:bg-accent sm:flex-row sm:items-center sm:justify-between">
-        <div className="flex flex-wrap items-center gap-2">
-          <div className="text-xs text-muted-foreground">{time}</div>
-          {m.group_letter && <Badge variant="outline">Grupa {m.group_letter}</Badge>}
-          {m.stage !== "group" && <Badge variant="secondary">{m.stage}</Badge>}
-          {finished ? <Badge>Final</Badge> : locked ? <Badge variant="destructive">Blocat</Badge> : <Badge variant="outline">Deschis</Badge>}
+    <Link to="/matches/$id" params={{ id: m.id }} className="block">
+      <article className="app-card app-card-interactive overflow-hidden">
+        <div className="flex items-stretch">
+          <div className="w-1 shrink-0 bg-[var(--wc-hermes)]" />
+          <div className="flex flex-1 flex-col gap-3 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-md bg-[var(--wc-hermes)]/10 px-2 py-0.5 text-xs font-bold tabular-nums text-[var(--wc-hermes)]">
+                {time}
+              </span>
+              {m.group_letter && (
+                <Badge variant="outline" className="border-[var(--wc-light-gray)] text-[var(--wc-dark-gray)]">
+                  Grupa {m.group_letter}
+                </Badge>
+              )}
+              {m.stage !== "group" && (
+                <Badge variant="secondary" className="capitalize">{m.stage}</Badge>
+              )}
+              <MatchStatusBadge status={matchStatus} score={score} />
+            </div>
+
+            <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-3 sm:w-auto sm:min-w-[320px] sm:gap-4">
+              <div className="truncate text-right">
+                <span className="mr-1.5 text-lg">{homeFlag}</span>
+                <span className="text-sm font-semibold sm:text-base">{homeName}</span>
+              </div>
+              <div className="flex min-w-[4.5rem] items-center justify-center rounded-lg bg-gradient-hermes px-3 py-2 text-sm font-black tabular-nums text-white shadow-sm">
+                {finished ? `${m.home_score} - ${m.away_score}` : "VS"}
+              </div>
+              <div className="truncate">
+                <span className="mr-1.5 text-lg">{awayFlag}</span>
+                <span className="text-sm font-semibold sm:text-base">{awayName}</span>
+              </div>
+            </div>
+          </div>
         </div>
-        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 font-medium sm:w-auto sm:gap-4">
-          <span className="truncate text-right text-sm sm:text-base">{home}</span>
-          <span className="rounded bg-muted px-2 py-1 text-center text-sm tabular-nums">
-            {finished ? `${m.home_score} - ${m.away_score}` : "vs"}
-          </span>
-          <span className="truncate text-sm sm:text-base">{away}</span>
-        </div>
-      </Card>
+      </article>
     </Link>
   );
 }

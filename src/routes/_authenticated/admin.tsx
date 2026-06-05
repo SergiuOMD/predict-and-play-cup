@@ -10,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
 import { importFixtures } from "@/lib/fixtures.functions";
+import { PageHeader } from "@/components/app/page-header";
+import { Shield } from "lucide-react";
 
 type Match = {
   id: string;
@@ -41,12 +43,16 @@ function AdminPage() {
     });
   }, []);
 
-  if (authorized === null) return <div>Se verifică...</div>;
-  if (!authorized) return <Card className="p-8 text-center"><p>Acces interzis.</p></Card>;
+  if (authorized === null) return <div className="app-card animate-pulse p-12 text-center text-muted-foreground">Se verifică...</div>;
+  if (!authorized) return <div className="app-card p-10 text-center text-[var(--wc-red)] font-medium">Acces interzis.</div>;
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Admin</h1>
+    <div className="space-y-6">
+      <PageHeader
+        title="Admin"
+        description="Gestionare meciuri, echipe și setări turneu."
+        icon={<Shield className="h-5 w-5 text-white" />}
+      />
       <ImportFixturesCard />
       <Tabs defaultValue="scores">
         <TabsList>

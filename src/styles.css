@@ -59,49 +59,63 @@
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-ring: var(--sidebar-ring);
+  --color-wc-hermes: var(--wc-hermes);
+  --color-wc-green: var(--wc-green);
+  --color-wc-red: var(--wc-red);
+  --color-wc-light-gray: var(--wc-light-gray);
+  --color-wc-dark-gray: var(--wc-dark-gray);
 }
 
 :root {
+  /* FIFA World Cup 2026 official palette */
+  --wc-hermes: #2a398d;
+  --wc-green: #3cac3b;
+  --wc-red: #e61d25;
+  --wc-light-gray: #d1d4d1;
+  --wc-dark-gray: #474a4a;
+
   --radius: 0.75rem;
-  --background: oklch(0.985 0.005 240);
-  --foreground: oklch(0.18 0.04 250);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.18 0.04 250);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.18 0.04 250);
-  --primary: oklch(0.45 0.18 265);
-  --primary-foreground: oklch(0.99 0 0);
-  --primary-glow: oklch(0.6 0.22 270);
+  --background: #f4f5f4;
+  --foreground: var(--wc-dark-gray);
+  --card: #ffffff;
+  --card-foreground: var(--wc-dark-gray);
+  --popover: #ffffff;
+  --popover-foreground: var(--wc-dark-gray);
+  --primary: var(--wc-hermes);
+  --primary-foreground: #ffffff;
+  --primary-glow: #3d52b5;
   --accent-gold: oklch(0.78 0.16 80);
-  --accent-red: oklch(0.58 0.22 25);
-  --secondary: oklch(0.96 0.01 250);
-  --secondary-foreground: oklch(0.2 0.04 260);
-  --muted: oklch(0.96 0.01 250);
-  --muted-foreground: oklch(0.5 0.03 255);
-  --accent: oklch(0.95 0.04 80);
-  --accent-foreground: oklch(0.25 0.08 80);
-  --destructive: oklch(0.58 0.22 25);
-  --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.92 0.01 250);
-  --input: oklch(0.92 0.01 250);
-  --ring: oklch(0.55 0.18 265);
-  --chart-1: oklch(0.45 0.18 265);
-  --chart-2: oklch(0.78 0.16 80);
-  --chart-3: oklch(0.58 0.22 25);
-  --chart-4: oklch(0.6 0.15 160);
-  --chart-5: oklch(0.5 0.2 300);
-  --sidebar: oklch(0.985 0.005 240);
-  --sidebar-foreground: oklch(0.18 0.04 250);
-  --sidebar-primary: oklch(0.45 0.18 265);
-  --sidebar-primary-foreground: oklch(0.99 0 0);
-  --sidebar-accent: oklch(0.96 0.01 250);
-  --sidebar-accent-foreground: oklch(0.2 0.04 260);
-  --sidebar-border: oklch(0.92 0.01 250);
-  --sidebar-ring: oklch(0.55 0.18 265);
-  --gradient-pitch: linear-gradient(135deg, oklch(0.22 0.08 260), oklch(0.32 0.12 250) 50%, oklch(0.45 0.18 265));
+  --accent-red: var(--wc-red);
+  --secondary: #e8eae8;
+  --secondary-foreground: var(--wc-dark-gray);
+  --muted: #e8eae8;
+  --muted-foreground: #6b6e6e;
+  --accent: #e8f5e8;
+  --accent-foreground: #2d7a2c;
+  --destructive: var(--wc-red);
+  --destructive-foreground: #ffffff;
+  --border: var(--wc-light-gray);
+  --input: var(--wc-light-gray);
+  --ring: var(--wc-hermes);
+  --chart-1: var(--wc-hermes);
+  --chart-2: var(--wc-green);
+  --chart-3: var(--wc-red);
+  --chart-4: var(--wc-dark-gray);
+  --chart-5: var(--wc-light-gray);
+  --sidebar: #ffffff;
+  --sidebar-foreground: var(--wc-dark-gray);
+  --sidebar-primary: var(--wc-hermes);
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #e8f5e8;
+  --sidebar-accent-foreground: var(--wc-dark-gray);
+  --sidebar-border: var(--wc-light-gray);
+  --sidebar-ring: var(--wc-hermes);
+  --gradient-pitch: linear-gradient(135deg, #1a2459 0%, var(--wc-hermes) 50%, #3d52b5 100%);
+  --gradient-wc: linear-gradient(135deg, var(--wc-hermes) 0%, #1e2d6e 50%, var(--wc-green) 100%);
   --gradient-gold: linear-gradient(135deg, oklch(0.85 0.15 85), oklch(0.7 0.18 60));
-  --shadow-elegant: 0 20px 50px -20px oklch(0.45 0.18 265 / 0.35);
+  --shadow-elegant: 0 12px 40px -12px rgb(42 57 141 / 0.28);
   --shadow-gold: 0 10px 30px -10px oklch(0.78 0.16 80 / 0.5);
+  --shadow-card: 0 2px 12px -2px rgb(71 74 74 / 0.1);
 }
 
 .dark {
@@ -147,6 +161,13 @@
     color: transparent;
   }
 
+  .text-gradient-wc {
+    background-image: var(--gradient-wc);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+
   .bg-gradient-gold {
     background-image: var(--gradient-gold);
     color: oklch(0.22 0.08 260);
@@ -154,6 +175,39 @@
 
   .bg-gradient-gold:hover {
     opacity: 0.9;
+  }
+
+  .bg-gradient-wc {
+    background-image: var(--gradient-wc);
+    color: #ffffff;
+  }
+
+  .bg-gradient-hermes {
+    background-image: var(--gradient-pitch);
+    color: #ffffff;
+  }
+
+  .app-shell-bg {
+    background-color: var(--background);
+    background-image:
+      radial-gradient(ellipse 80% 50% at 50% -20%, rgb(42 57 141 / 0.08), transparent),
+      radial-gradient(ellipse 60% 40% at 100% 100%, rgb(60 172 59 / 0.06), transparent);
+  }
+
+  .app-card {
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    background: var(--card);
+    box-shadow: var(--shadow-card);
+    transition: box-shadow 0.2s ease, transform 0.2s ease;
+  }
+
+  .app-card:hover {
+    box-shadow: var(--shadow-elegant);
+  }
+
+  .app-card-interactive:hover {
+    transform: translateY(-1px);
   }
 }
 

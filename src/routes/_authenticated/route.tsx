@@ -4,6 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Trophy, LogOut, Calendar, Grid3x3, Medal, Star, Shield } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
+import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/_authenticated")({
   ssr: false,
@@ -44,59 +45,90 @@ function AuthedLayout() {
     navigate({ to: "/auth" });
   };
 
-  const navLinkClass = (active: boolean, compact = false) =>
-    [
-      "rounded-md font-medium transition-colors",
-      compact ? "flex flex-col items-center gap-0.5 px-2 py-1.5 text-[10px]" : "px-3 py-1.5 text-sm",
-      active ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-accent hover:text-foreground",
-    ].join(" ");
+  const navClass = (active: boolean, compact = false) =>
+    cn(
+      "font-semibold transition-all",
+      compact
+        ? "flex flex-1 flex-col items-center gap-0.5 px-1 py-2 text-[10px]"
+        : "rounded-full px-4 py-2 text-sm",
+      compact
+        ? active
+          ? "text-white"
+          : "text-white/60"
+        : active
+          ? "bg-white/15 text-white shadow-sm"
+          : "text-white/75 hover:bg-white/10 hover:text-white",
+    );
 
   return (
-    <div className="min-h-screen-safe bg-background">
-      <header className="sticky top-0 z-40 border-b bg-background/95 pt-safe backdrop-blur supports-[backdrop-filter]:bg-background/80">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-2.5 sm:px-4 sm:py-3">
-          <Link to="/matches" className="flex min-w-0 items-center gap-2 font-bold">
-            <Trophy className="h-5 w-5 shrink-0 text-primary" />
-            <span className="truncate text-xs sm:text-sm">ORBICO WC2026</span>
+    <div className="min-h-screen-safe app-shell-bg">
+      <header className="sticky top-0 z-40 bg-gradient-hermes pt-safe shadow-[var(--shadow-elegant)]">
+        <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-3 py-3 sm:px-4">
+          <Link to="/matches" className="flex min-w-0 items-center gap-2.5 font-bold text-white">
+            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/15 ring-1 ring-white/20">
+              <Trophy className="h-5 w-5 text-[var(--accent-gold)]" />
+            </div>
+            <div className="min-w-0 leading-tight">
+              <span className="block truncate text-xs font-semibold uppercase tracking-wider text-white/70">
+                ORBICO MOLDOVA
+              </span>
+              <span className="block truncate text-sm sm:text-base">World Cup 2026</span>
+            </div>
           </Link>
 
           <nav className="hidden flex-1 items-center justify-center gap-1 md:flex">
             {NAV.map((n) => (
-              <Link key={n.to} to={n.to} className={navLinkClass(path.startsWith(n.to))}>
+              <Link key={n.to} to={n.to} className={navClass(path.startsWith(n.to))}>
                 {n.label}
               </Link>
             ))}
             {isAdmin && (
-              <Link to="/admin" className={navLinkClass(path.startsWith("/admin"))}>
+              <Link to="/admin" className={navClass(path.startsWith("/admin"))}>
                 Admin
               </Link>
             )}
           </nav>
 
-          <Button variant="ghost" size="icon" className="shrink-0" onClick={signOut} aria-label="Deconectare">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="shrink-0 text-white/80 hover:bg-white/10 hover:text-white"
+            onClick={signOut}
+            aria-label="Deconectare"
+          >
             <LogOut className="h-4 w-4" />
           </Button>
         </div>
+
+        {/* Accent stripe — paletă oficială */}
+        <div className="flex h-1">
+          <div className="h-full flex-1 bg-[var(--wc-hermes)]" />
+          <div className="h-full flex-1 bg-[var(--wc-green)]" />
+          <div className="h-full flex-1 bg-[var(--wc-red)]" />
+          <div className="h-full flex-1 bg-[var(--wc-light-gray)]" />
+          <div className="h-full flex-1 bg-[var(--wc-dark-gray)]" />
+        </div>
       </header>
 
-      <main className="mx-auto max-w-6xl px-3 py-4 pb-24 sm:px-4 sm:py-6 md:pb-6">
+      <main className="mx-auto max-w-6xl px-3 py-5 pb-24 sm:px-4 sm:py-8 md:pb-8">
         <Outlet />
       </main>
 
-      <nav className="fixed inset-x-0 bottom-0 z-40 border-t bg-background/95 pb-safe backdrop-blur md:hidden">
-        <div className="mx-auto flex max-w-lg items-stretch justify-around px-1 pt-1">
+      <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-white/10 bg-gradient-hermes pb-safe md:hidden">
+        <div className="mx-auto flex max-w-lg items-stretch justify-around px-1">
           {NAV.map((n) => {
             const Icon = n.icon;
             const active = path.startsWith(n.to);
             return (
-              <Link key={n.to} to={n.to} className={navLinkClass(active, true)}>
-                <Icon className={`h-5 w-5 ${active ? "" : "opacity-80"}`} />
+              <Link key={n.to} to={n.to} className={navClass(active, true)}>
+                <Icon className={cn("h-5 w-5", active && "drop-shadow-sm")} />
                 <span>{n.label}</span>
+                {active && <span className="h-0.5 w-4 rounded-full bg-[var(--wc-green)]" />}
               </Link>
             );
           })}
           {isAdmin && (
-            <Link to="/admin" className={navLinkClass(path.startsWith("/admin"), true)}>
+            <Link to="/admin" className={navClass(path.startsWith("/admin"), true)}>
               <Shield className="h-5 w-5" />
               <span>Admin</span>
             </Link>

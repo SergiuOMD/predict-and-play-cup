@@ -1,18 +1,25 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PageHeader } from "@/components/app/page-header";
 import { toast } from "sonner";
+import { Star, Trophy, Target } from "lucide-react";
 
 type Team = { id: string; name: string; flag_emoji: string | null };
-type Settings = { bonus_lock_at: string | null; champion_team_id: string | null; top_scorer_name: string | null; champion_points: number; top_scorer_points: number };
+type Settings = {
+  bonus_lock_at: string | null;
+  champion_team_id: string | null;
+  top_scorer_name: string | null;
+  champion_points: number;
+  top_scorer_points: number;
+};
 
 export const Route = createFileRoute("/_authenticated/bonus")({
-  head: () => ({ meta: [{ title: "Bonus · OMD WC2026" }] }),
+  head: () => ({ meta: [{ title: "Bonus · ORBICO WC2026" }] }),
   component: BonusPage,
 });
 
@@ -57,22 +64,49 @@ function BonusPage() {
   };
 
   return (
-    <div className="space-y-4">
-      <h1 className="text-2xl font-bold">Predicții bonus</h1>
-      <Card>
-        <CardHeader>
-          <CardTitle>Campion & Golgheter</CardTitle>
-          <CardDescription>
-            +{settings?.champion_points ?? 5} pct campion corect · +{settings?.top_scorer_points ?? 5} pct golgheter corect.
-            {locked && <span className="ml-1 text-destructive">Bonus blocat.</span>}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form method="post" onSubmit={save} className="space-y-4">
-            <div>
-              <Label>Campion mondial</Label>
+    <div className="space-y-6">
+      <PageHeader
+        title="Predicții bonus"
+        description="Alege campionul mondial și golgheterul turneului — puncte extra la final."
+        icon={<Star className="h-5 w-5 text-white" />}
+      />
+
+      <div className="grid gap-4 sm:grid-cols-2">
+        <div className="app-card flex items-start gap-4 p-5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--wc-hermes)]/10">
+            <Trophy className="h-5 w-5 text-[var(--wc-hermes)]" />
+          </div>
+          <div>
+            <p className="font-bold text-[var(--wc-hermes)]">Campion mondial</p>
+            <p className="text-2xl font-black">+{settings?.champion_points ?? 5} pct</p>
+          </div>
+        </div>
+        <div className="app-card flex items-start gap-4 p-5">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--wc-green)]/10">
+            <Target className="h-5 w-5 text-[var(--wc-green)]" />
+          </div>
+          <div>
+            <p className="font-bold text-[var(--wc-green)]">Golgheter</p>
+            <p className="text-2xl font-black">+{settings?.top_scorer_points ?? 5} pct</p>
+          </div>
+        </div>
+      </div>
+
+      <div className="app-card overflow-hidden">
+        <div className="h-1 bg-gradient-to-r from-[var(--wc-hermes)] via-[var(--wc-green)] to-[var(--wc-red)]" />
+        <div className="p-6 sm:p-8">
+          {locked && (
+            <div className="mb-6 rounded-lg border border-[var(--wc-red)]/30 bg-[#fde8e9] px-4 py-3 text-sm font-medium text-[var(--wc-red)]">
+              Predicțiile bonus sunt blocate.
+            </div>
+          )}
+          <form method="post" onSubmit={save} className="mx-auto max-w-md space-y-5">
+            <div className="space-y-2">
+              <Label className="text-[var(--wc-dark-gray)]">Campion mondial</Label>
               <Select value={champion} onValueChange={setChampion} disabled={locked}>
-                <SelectTrigger><SelectValue placeholder="Alege echipa" /></SelectTrigger>
+                <SelectTrigger className="h-11 border-[var(--wc-light-gray)]">
+                  <SelectValue placeholder="Alege echipa" />
+                </SelectTrigger>
                 <SelectContent>
                   {teams.map((t) => (
                     <SelectItem key={t.id} value={t.id}>{t.flag_emoji} {t.name}</SelectItem>
@@ -80,14 +114,24 @@ function BonusPage() {
                 </SelectContent>
               </Select>
             </div>
-            <div>
-              <Label>Golgheter (nume jucător)</Label>
-              <Input value={topScorer} onChange={(e) => setTopScorer(e.target.value)} disabled={locked} placeholder="ex. Kylian Mbappé" />
+            <div className="space-y-2">
+              <Label className="text-[var(--wc-dark-gray)]">Golgheter (nume jucător)</Label>
+              <Input
+                value={topScorer}
+                onChange={(e) => setTopScorer(e.target.value)}
+                disabled={locked}
+                placeholder="ex. Kylian Mbappé"
+                className="h-11 border-[var(--wc-light-gray)]"
+              />
             </div>
-            {!locked && <Button type="submit" disabled={saving}>Salvează</Button>}
+            {!locked && (
+              <Button type="submit" disabled={saving} className="h-11 w-full bg-gradient-hermes font-semibold hover:opacity-90">
+                {saving ? "Se salvează..." : "Salvează predicțiile bonus"}
+              </Button>
+            )}
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }
