@@ -120,8 +120,8 @@ function AuthPage() {
   };
 
   return (
-    <div className="grid min-h-screen-safe w-full md:h-screen md:min-h-screen md:grid-cols-2">
-      <div className="relative hidden min-h-screen-safe overflow-hidden bg-[oklch(0.16_0.05_260)] md:block md:h-full">
+    <div className="flex h-dvh w-full max-w-none overflow-hidden">
+      <aside className="relative hidden h-full w-1/2 shrink-0 overflow-hidden bg-[oklch(0.16_0.05_260)] md:flex md:flex-col">
         <img src={heroImg} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-tr from-[oklch(0.16_0.05_260)] via-[oklch(0.16_0.05_260)]/40 to-transparent" />
         <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
@@ -143,9 +143,9 @@ function AuthPage() {
             </p>
           </div>
         </div>
-      </div>
+      </aside>
 
-      <div className="flex min-h-screen-safe w-full items-center justify-center bg-background p-6 md:min-h-full">
+      <main className="flex h-full w-full flex-1 items-center justify-center overflow-y-auto bg-background p-6 md:w-1/2 md:flex-none">
         <Card className="w-full max-w-md border-border/60 shadow-[var(--shadow-elegant)]">
           <CardHeader className="text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--gradient-gold)] shadow-[var(--shadow-gold)] md:hidden">
@@ -186,7 +186,7 @@ function AuthPage() {
             </Tabs>
           </CardContent>
         </Card>
-      </div>
+      </main>
     </div>
   );
 }
