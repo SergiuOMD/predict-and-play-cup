@@ -21,7 +21,7 @@ export const Route = createFileRoute("/")({
 
 function Landing() {
   return (
-    <div className="min-h-screen overflow-hidden bg-[oklch(0.16_0.05_260)] text-white">
+    <div className="min-h-screen-safe overflow-x-hidden bg-[oklch(0.16_0.05_260)] text-white">
       <header className="relative z-20">
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-5">
           <div className="flex min-w-0 items-center gap-2 font-bold">
@@ -52,7 +52,7 @@ function Landing() {
             <Sparkles className="h-3.5 w-3.5 text-[var(--accent-gold)]" />
             <span>FIFA World Cup 2026 · USA · Canada · Mexico</span>
           </div>
-          <h1 className="mt-8 text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
+          <h1 className="mt-8 text-4xl font-black leading-[0.95] tracking-tight sm:text-5xl md:text-7xl">
             Pune-ți instinctul <br />
             <span className="text-gradient-gold">la pariu</span>
           </h1>

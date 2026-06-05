@@ -88,21 +88,19 @@ function MatchRow({ m }: { m: Match }) {
 
   return (
     <Link to="/matches/$id" params={{ id: m.id }}>
-      <Card className="flex items-center justify-between p-4 transition-colors hover:bg-accent">
-        <div className="flex items-center gap-3">
+      <Card className="flex flex-col gap-3 p-4 transition-colors hover:bg-accent sm:flex-row sm:items-center sm:justify-between">
+        <div className="flex flex-wrap items-center gap-2">
           <div className="text-xs text-muted-foreground">{time}</div>
           {m.group_letter && <Badge variant="outline">Grupa {m.group_letter}</Badge>}
           {m.stage !== "group" && <Badge variant="secondary">{m.stage}</Badge>}
+          {finished ? <Badge>Final</Badge> : locked ? <Badge variant="destructive">Blocat</Badge> : <Badge variant="outline">Deschis</Badge>}
         </div>
-        <div className="flex items-center gap-4 font-medium">
-          <span className="text-right">{home}</span>
-          <span className="rounded bg-muted px-2 py-1 text-sm tabular-nums">
+        <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2 font-medium sm:w-auto sm:gap-4">
+          <span className="truncate text-right text-sm sm:text-base">{home}</span>
+          <span className="rounded bg-muted px-2 py-1 text-center text-sm tabular-nums">
             {finished ? `${m.home_score} - ${m.away_score}` : "vs"}
           </span>
-          <span>{away}</span>
-        </div>
-        <div className="text-xs">
-          {finished ? <Badge>Final</Badge> : locked ? <Badge variant="destructive">Blocat</Badge> : <Badge variant="outline">Deschis</Badge>}
+          <span className="truncate text-sm sm:text-base">{away}</span>
         </div>
       </Card>
     </Link>

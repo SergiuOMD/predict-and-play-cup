@@ -5,9 +5,65 @@
 //     error logger plugins, and sandbox detection (port/host/strictPort).
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
+import { VitePWA } from "vite-plugin-pwa";
+
+const PWA_THEME = "#1a2238";
 
 export default defineConfig({
   vite: {
+    plugins: [
+      VitePWA({
+        registerType: "autoUpdate",
+        includeAssets: ["favicon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png"],
+        manifest: {
+          name: "ORBICO MOLDOVA World Cup 2026",
+          short_name: "WC2026",
+          description: "Totalizator pronosticuri FIFA World Cup 2026",
+          theme_color: PWA_THEME,
+          background_color: PWA_THEME,
+          display: "standalone",
+          orientation: "portrait-primary",
+          scope: "/",
+          start_url: "/",
+          lang: "ro",
+          icons: [
+            {
+              src: "icon-192.png",
+              sizes: "192x192",
+              type: "image/png",
+            },
+            {
+              src: "icon-512.png",
+              sizes: "512x512",
+              type: "image/png",
+            },
+            {
+              src: "icon-512.png",
+              sizes: "512x512",
+              type: "image/png",
+              purpose: "maskable",
+            },
+          ],
+        },
+        workbox: {
+          globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webp,jpg}"],
+          navigateFallback: null,
+          runtimeCaching: [
+            {
+              urlPattern: /^https:\/\/.*\.supabase\.co\/.*/i,
+              handler: "NetworkFirst",
+              options: {
+                cacheName: "supabase-api",
+                expiration: { maxEntries: 32, maxAgeSeconds: 300 },
+              },
+            },
+          ],
+        },
+        devOptions: {
+          enabled: false,
+        },
+      }),
+    ],
     server: {
       port: 5173,
       strictPort: true,

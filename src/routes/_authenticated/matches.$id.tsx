@@ -126,9 +126,9 @@ function MatchDetail() {
 
       <Card>
         <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle>{home} vs {away}</CardTitle>
-            <div className="flex gap-2">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <CardTitle className="text-lg leading-snug sm:text-xl">{home} vs {away}</CardTitle>
+            <div className="flex flex-wrap gap-2">
               {match.group_letter && <Badge variant="outline">Grupa {match.group_letter}</Badge>}
               {finished ? <Badge>Final {match.home_score}-{match.away_score}</Badge>
                 : locked ? <Badge variant="destructive">Blocat</Badge>
@@ -146,13 +146,21 @@ function MatchDetail() {
               {locked && <span className="ml-1 text-destructive">Pronosticurile sunt blocate cu 1h înainte de kickoff.</span>}
             </p>
             {[1, 2, 3].map((i) => (
-              <div key={i} className="flex items-center justify-center gap-3">
-                <span className="w-12 text-sm text-muted-foreground">P{i}</span>
-                <span className="w-32 text-right">{home}</span>
-                {numField(`score${i}_home` as keyof Pred)}
-                <span>-</span>
-                {numField(`score${i}_away` as keyof Pred)}
-                <span className="w-32">{away}</span>
+              <div key={i} className="rounded-lg border p-3 sm:border-0 sm:p-0">
+                <div className="mb-2 text-center text-xs font-medium text-muted-foreground sm:hidden">Pronostic {i}</div>
+                <div className="flex flex-col items-center gap-2 sm:flex-row sm:justify-center sm:gap-3">
+                  <span className="hidden w-12 text-sm text-muted-foreground sm:inline">P{i}</span>
+                  <span className="hidden w-32 truncate text-right sm:inline">{home}</span>
+                  <div className="flex items-center gap-2">
+                    {numField(`score${i}_home` as keyof Pred)}
+                    <span>-</span>
+                    {numField(`score${i}_away` as keyof Pred)}
+                  </div>
+                  <span className="hidden w-32 truncate sm:inline">{away}</span>
+                  <p className="text-center text-xs text-muted-foreground sm:hidden">
+                    {home} vs {away}
+                  </p>
+                </div>
               </div>
             ))}
             {!locked && <Button type="submit" disabled={saving} className="w-full">{hasPred ? "Actualizează" : "Trimite"}</Button>}
@@ -171,12 +179,12 @@ function MatchDetail() {
           <CardContent>
             <div className="space-y-2">
               {allPreds.sort((a, b) => b.points - a.points).map((p, i) => (
-                <div key={i} className="flex items-center justify-between rounded border p-2 text-sm">
+                <div key={i} className="flex flex-col gap-2 rounded border p-3 text-sm sm:flex-row sm:items-center sm:justify-between">
                   <span className="font-medium">{p.display_name}</span>
                   <span className="font-mono text-xs text-muted-foreground">
                     {p.score1_home}-{p.score1_away} · {p.score2_home}-{p.score2_away} · {p.score3_home}-{p.score3_away}
                   </span>
-                  <Badge variant={p.points > 0 ? "default" : "secondary"}>{p.points} pct</Badge>
+                  <Badge className="w-fit" variant={p.points > 0 ? "default" : "secondary"}>{p.points} pct</Badge>
                 </div>
               ))}
             </div>

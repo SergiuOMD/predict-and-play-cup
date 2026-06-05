@@ -85,7 +85,7 @@ function AuthPage() {
   };
 
   return (
-    <div className="grid min-h-screen md:grid-cols-2">
+    <div className="grid min-h-screen-safe md:grid-cols-2">
       <div className="relative hidden overflow-hidden bg-[oklch(0.16_0.05_260)] md:block">
         <img src={heroImg} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-tr from-[oklch(0.16_0.05_260)] via-[oklch(0.16_0.05_260)]/40 to-transparent" />
