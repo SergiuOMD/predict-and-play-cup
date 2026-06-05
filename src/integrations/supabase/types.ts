@@ -94,6 +94,7 @@ export type Database = {
           away_team_id: string | null
           away_team_label: string | null
           created_at: string
+          external_id: string | null
           group_letter: string | null
           home_score: number | null
           home_team_id: string | null
@@ -110,6 +111,7 @@ export type Database = {
           away_team_id?: string | null
           away_team_label?: string | null
           created_at?: string
+          external_id?: string | null
           group_letter?: string | null
           home_score?: number | null
           home_team_id?: string | null
@@ -126,6 +128,7 @@ export type Database = {
           away_team_id?: string | null
           away_team_label?: string | null
           created_at?: string
+          external_id?: string | null
           group_letter?: string | null
           home_score?: number | null
           home_team_id?: string | null
@@ -235,6 +238,7 @@ export type Database = {
         Row: {
           code: string | null
           created_at: string
+          external_id: string | null
           flag_emoji: string | null
           group_letter: string | null
           id: string
@@ -243,6 +247,7 @@ export type Database = {
         Insert: {
           code?: string | null
           created_at?: string
+          external_id?: string | null
           flag_emoji?: string | null
           group_letter?: string | null
           id?: string
@@ -251,6 +256,7 @@ export type Database = {
         Update: {
           code?: string | null
           created_at?: string
+          external_id?: string | null
           flag_emoji?: string | null
           group_letter?: string | null
           id?: string
