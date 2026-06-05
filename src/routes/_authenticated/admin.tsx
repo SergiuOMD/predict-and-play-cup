@@ -47,6 +47,7 @@ function AdminPage() {
   return (
     <div className="space-y-4">
       <h1 className="text-2xl font-bold">Admin</h1>
+      <ImportFixturesCard />
       <Tabs defaultValue="scores">
         <TabsList>
           <TabsTrigger value="scores">Scoruri meciuri</TabsTrigger>
@@ -60,6 +61,38 @@ function AdminPage() {
         <TabsContent value="settings"><SettingsTab /></TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+function ImportFixturesCard() {
+  const importFn = useServerFn(importFixtures);
+  const [loading, setLoading] = useState(false);
+  const run = async () => {
+    setLoading(true);
+    try {
+      const r = await importFn();
+      toast.success(`Import OK: ${r.teamsUpserted}/${r.totalTeams} echipe, ${r.matchesUpserted}/${r.totalMatches} meciuri`);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Eroare la import");
+    } finally {
+      setLoading(false);
+    }
+  };
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-lg">Import fixtures (football-data.org)</CardTitle>
+        <CardDescription>
+          Importă/actualizează echipele și meciurile pentru FIFA World Cup 2026 din API-ul football-data.org.
+          Reapasă oricând pentru a sincroniza rezultate.
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <Button onClick={run} disabled={loading}>
+          {loading ? "Se importă..." : "Importă acum"}
+        </Button>
+      </CardContent>
+    </Card>
   );
 }
 
