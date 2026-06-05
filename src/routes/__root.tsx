@@ -16,6 +16,13 @@ import { reportLovableError } from "../lib/lovable-error-reporting";
 const PWA_THEME = "#1a2238";
 const APP_NAME = "ORBICO MOLDOVA World Cup 2026";
 
+/** Încarcă React Refresh înainte de modulele de rută (fix HMR TanStack Start). */
+const REACT_REFRESH_PREAMBLE = `import { injectIntoGlobalHook } from "/@react-refresh";
+injectIntoGlobalHook(window);
+window.$RefreshReg$ = () => {};
+window.$RefreshSig$ = () => (type) => type;
+window.__vite_plugin_react_preamble_installed__ = true;`;
+
 function NotFoundComponent() {
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -102,6 +109,9 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       { rel: "manifest", href: "/manifest.webmanifest" },
     ],
+    scripts: import.meta.env.DEV
+      ? [{ type: "module", children: REACT_REFRESH_PREAMBLE }]
+      : undefined,
   }),
   shellComponent: RootShell,
   component: RootComponent,

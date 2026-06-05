@@ -65,8 +65,15 @@ export default defineConfig({
       }),
     ],
     server: {
+      // localhost evită probleme WebSocket HMR pe Windows (host "::" din config-ul implicit)
+      host: "localhost",
       port: 5173,
       strictPort: true,
+      hmr: {
+        host: "localhost",
+        port: 5173,
+        protocol: "ws",
+      },
     },
   },
   tanstackStart: {
