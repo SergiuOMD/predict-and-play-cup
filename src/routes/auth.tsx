@@ -1,7 +1,12 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
+import {
+  SENSITIVE_SEARCH_KEYS,
+  stripSensitiveFromSearchRecord,
+  stripSensitiveSearchParams,
+} from "@/lib/sanitize-search-params";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,12 +16,33 @@ import { toast } from "sonner";
 import { Trophy, Sparkles } from "lucide-react";
 import heroImg from "@/assets/wc2026-hero.jpg";
 
-const INVITE_CODE = "OMDworldcup2026";
-
 const searchSchema = z.object({ tab: z.enum(["login", "signup"]).optional() });
 
+function validateAuthSearch(search: Record<string, unknown>) {
+  return searchSchema.parse(stripSensitiveFromSearchRecord(search));
+}
+
 export const Route = createFileRoute("/auth")({
-  validateSearch: searchSchema,
+  ssr: false,
+  validateSearch: validateAuthSearch,
+  beforeLoad: ({ location }) => {
+    const params = new URLSearchParams(location.search);
+    let dirty = false;
+    for (const key of [...params.keys()]) {
+      if (SENSITIVE_SEARCH_KEYS.has(key.toLowerCase())) {
+        params.delete(key);
+        dirty = true;
+      }
+    }
+    if (dirty) {
+      const tab = params.get("tab");
+      throw redirect({
+        to: "/auth",
+        search: tab === "signup" ? { tab: "signup" } : undefined,
+        replace: true,
+      });
+    }
+  },
   head: () => ({ meta: [{ title: "Login · OMD WC2026" }] }),
   component: AuthPage,
 });
@@ -27,6 +53,15 @@ function AuthPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
+    if (stripSensitiveSearchParams()) {
+      const tabParam = new URLSearchParams(window.location.search).get("tab");
+      navigate({
+        to: "/auth",
+        search: tabParam === "signup" ? { tab: "signup" } : undefined,
+        replace: true,
+      });
+    }
+
     supabase.auth.getSession().then(({ data }) => {
       if (data.session) navigate({ to: "/matches" });
     });
@@ -85,8 +120,8 @@ function AuthPage() {
   };
 
   return (
-    <div className="grid min-h-screen-safe md:grid-cols-2">
-      <div className="relative hidden overflow-hidden bg-[oklch(0.16_0.05_260)] md:block">
+    <div className="grid min-h-screen-safe w-full md:h-screen md:min-h-screen md:grid-cols-2">
+      <div className="relative hidden min-h-screen-safe overflow-hidden bg-[oklch(0.16_0.05_260)] md:block md:h-full">
         <img src={heroImg} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-tr from-[oklch(0.16_0.05_260)] via-[oklch(0.16_0.05_260)]/40 to-transparent" />
         <div className="relative z-10 flex h-full flex-col justify-between p-10 text-white">
@@ -110,7 +145,7 @@ function AuthPage() {
         </div>
       </div>
 
-      <div className="flex items-center justify-center bg-background p-6">
+      <div className="flex min-h-screen-safe w-full items-center justify-center bg-background p-6 md:min-h-full">
         <Card className="w-full max-w-md border-border/60 shadow-[var(--shadow-elegant)]">
           <CardHeader className="text-center">
             <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-[var(--gradient-gold)] shadow-[var(--shadow-gold)] md:hidden">
@@ -129,21 +164,21 @@ function AuthPage() {
               </TabsList>
 
               <TabsContent value="login">
-                <form onSubmit={handleLogin} className="space-y-3">
-                  <div><Label>Email</Label><Input name="email" type="email" required autoComplete="email" /></div>
-                  <div><Label>Parolă</Label><Input name="password" type="password" required autoComplete="current-password" /></div>
+                <form method="post" action="/auth" onSubmit={handleLogin} className="space-y-3" autoComplete="on">
+                  <div><Label htmlFor="login-email">Email</Label><Input id="login-email" name="email" type="email" required autoComplete="email" /></div>
+                  <div><Label htmlFor="login-password">Parolă</Label><Input id="login-password" name="password" type="password" required autoComplete="current-password" /></div>
                   <Button type="submit" className="w-full" disabled={loading}>Login</Button>
                 </form>
               </TabsContent>
 
               <TabsContent value="signup">
-                <form onSubmit={handleSignup} className="space-y-3">
-                  <div><Label>Nume afișat</Label><Input name="name" required autoComplete="name" /></div>
-                  <div><Label>Email</Label><Input name="email" type="email" required autoComplete="email" /></div>
-                  <div><Label>Parolă</Label><Input name="password" type="password" required minLength={6} autoComplete="new-password" /></div>
+                <form method="post" action="/auth" onSubmit={handleSignup} className="space-y-3" autoComplete="on">
+                  <div><Label htmlFor="signup-name">Nume afișat</Label><Input id="signup-name" name="name" required autoComplete="name" /></div>
+                  <div><Label htmlFor="signup-email">Email</Label><Input id="signup-email" name="email" type="email" required autoComplete="email" /></div>
+                  <div><Label htmlFor="signup-password">Parolă</Label><Input id="signup-password" name="password" type="password" required minLength={6} autoComplete="new-password" /></div>
                   <div>
-                    <Label>Cod invitație</Label>
-                    <Input name="invite" required placeholder={INVITE_CODE} autoComplete="off" />
+                    <Label htmlFor="signup-invite">Cod invitație</Label>
+                    <Input id="signup-invite" name="invite" required placeholder="Introdu codul primit" autoComplete="off" />
                   </div>
                   <Button type="submit" className="w-full" disabled={loading}>Creează cont</Button>
                 </form>

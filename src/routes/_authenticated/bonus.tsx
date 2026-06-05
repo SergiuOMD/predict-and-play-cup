@@ -68,7 +68,7 @@ function BonusPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={save} className="space-y-4">
+          <form method="post" onSubmit={save} className="space-y-4">
             <div>
               <Label>Campion mondial</Label>
               <Select value={champion} onValueChange={setChampion} disabled={locked}>

@@ -186,11 +186,14 @@
   }
 
   html {
+    width: 100%;
     -webkit-tap-highlight-color: transparent;
     text-size-adjust: 100%;
   }
 
   body {
+    width: 100%;
+    min-height: 100dvh;
     background-color: var(--color-background);
     color: var(--color-foreground);
     overflow-x: hidden;

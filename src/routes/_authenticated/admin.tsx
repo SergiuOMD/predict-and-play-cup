@@ -123,7 +123,7 @@ function ScoresTab() {
         const home = m.home_team?.name ?? m.home_team_label ?? "TBD";
         const away = m.away_team?.name ?? m.away_team_label ?? "TBD";
         return (
-          <form key={m.id} onSubmit={(e) => {
+          <form key={m.id} method="post" onSubmit={(e) => {
             e.preventDefault();
             const fd = new FormData(e.currentTarget);
             save(m, Number(fd.get("h")), Number(fd.get("a")), String(fd.get("status")));
@@ -173,7 +173,7 @@ function TeamsTab() {
 
   return (
     <Card><CardContent className="space-y-4 pt-6">
-      <form onSubmit={add} className="flex flex-wrap gap-2">
+      <form method="post" onSubmit={add} className="flex flex-wrap gap-2">
         <Input name="name" placeholder="Nume echipă" required className="flex-1 min-w-32" />
         <Input name="code" placeholder="Cod (FRA)" className="w-24" />
         <Input name="flag" placeholder="🇫🇷" className="w-20" />
@@ -225,7 +225,7 @@ function MatchesTab() {
 
   return (
     <Card><CardContent className="space-y-4 pt-6">
-      <form onSubmit={add} className="grid grid-cols-2 gap-2 md:grid-cols-4">
+      <form method="post" onSubmit={add} className="grid grid-cols-2 gap-2 md:grid-cols-4">
         <Select name="home"><SelectTrigger><SelectValue placeholder="Acasă" /></SelectTrigger>
           <SelectContent>{teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
         </Select>
@@ -299,7 +299,7 @@ function SettingsTab() {
 
   return (
     <Card><CardContent className="space-y-3 pt-6">
-      <form onSubmit={save} className="space-y-3">
+      <form method="post" onSubmit={save} className="space-y-3">
         <div><Label>Deadline bonus (lock)</Label><Input type="datetime-local" value={s.bonus_lock_at} onChange={(e) => setS({ ...s, bonus_lock_at: e.target.value })} /></div>
         <div><Label>Câștigător real (campion)</Label>
           <Select value={s.champion_team_id} onValueChange={(v) => setS({ ...s, champion_team_id: v })}>

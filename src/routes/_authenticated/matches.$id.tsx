@@ -140,7 +140,7 @@ function MatchDetail() {
           </p>
         </CardHeader>
         <CardContent>
-          <form onSubmit={submit} className="space-y-4">
+          <form method="post" onSubmit={submit} className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Introdu 3 pronosticuri. 1 punct pentru fiecare scor exact (max 3 puncte).
               {locked && <span className="ml-1 text-destructive">Pronosticurile sunt blocate cu 1h înainte de kickoff.</span>}
