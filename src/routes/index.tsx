@@ -52,7 +52,7 @@ function Landing() {
           </div>
           <h1 className="mt-8 text-5xl font-black leading-[0.95] tracking-tight md:text-7xl">
             Pune-ți instinctul <br />
-            <span className="bg-[var(--gradient-gold)] bg-clip-text text-transparent">la pariu</span>
+            <span className="text-gradient-gold">la pariu</span>
           </h1>
           <p className="mx-auto mt-6 max-w-xl text-base text-white/70 md:text-lg">
             Totalizatorul OMD pentru World Cup 2026. Pronostichează 3 scoruri per meci,

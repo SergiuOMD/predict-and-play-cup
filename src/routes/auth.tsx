@@ -101,7 +101,7 @@ function AuthPage() {
               <Sparkles className="h-3 w-3 text-[var(--accent-gold)]" /> USA · Canada · Mexico
             </div>
             <h2 className="mt-4 text-4xl font-black leading-tight">
-              Joacă <span className="bg-[var(--gradient-gold)] bg-clip-text text-transparent">World Cup 2026</span> alături de colegi
+              Joacă <span className="text-gradient-gold">World Cup 2026</span> alături de colegi
             </h2>
             <p className="mt-3 max-w-sm text-sm text-white/70">
               48 echipe. 104 meciuri. Un singur clasament — al biroului tău.
