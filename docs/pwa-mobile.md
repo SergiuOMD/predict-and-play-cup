@@ -1,5 +1,15 @@
 # PWA & mobile
 
+## Înainte de build
+
+După ce tragi ultimele modificări din git:
+
+```bash
+npm install --legacy-peer-deps
+```
+
+Fără acest pas, `npm run build` poate eșua cu `Cannot find package 'vite-plugin-pwa'`.
+
 ## Instalare PWA
 
 După deploy (HTTPS obligatoriu):
