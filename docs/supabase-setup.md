@@ -13,6 +13,7 @@ Eroarea **500 la signup** apare aproape întotdeauna când lipsește schema DB s
 3. `supabase/migrations/20260605140000_football_data_external_ids.sql`
 4. `supabase/migrations/20260605150000_seed_invite_admin.sql`
 5. `supabase/migrations/20260605160000_fix_signup_invite_code.sql`
+6. `supabase/migrations/20260605170000_email_only_signup.sql` ← **obligatoriu** (signup doar email + invitație)
 
 **Sau** după migrările 1–3, rulează `supabase/setup_new_project.sql` (seed + fix + verificare).
 
@@ -57,16 +58,14 @@ SUPABASE_PROJECT_ID=NOUL_PROJECT_REF
 npm run dev
 ```
 
-### 5. Auth URL Configuration
+### 5. Auth (doar email + parolă)
+
+**Authentication → Providers:**
+- **Email** — enabled
+- **Google** — disabled (nu e folosit)
 
 **Authentication → URL Configuration:**
-
 - Site URL: `http://localhost:5173`
-- Redirect URLs:
-  ```
-  http://localhost:5173/auth/callback
-  http://127.0.0.1:5173/auth/callback
-  ```
 
 ## Signup în app
 

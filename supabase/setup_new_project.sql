@@ -51,25 +51,25 @@ RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 DECLARE
   v_code TEXT;
   v_name TEXT;
-  v_provider TEXT;
 BEGIN
-  v_code := TRIM(NEW.raw_user_meta_data->>'invite_code');
+  v_code := TRIM(COALESCE(
+    NEW.raw_user_meta_data->>'invite_code',
+    NEW.raw_user_meta_data->>'invite'
+  ));
   v_name := COALESCE(
-    NEW.raw_user_meta_data->>'display_name',
-    NEW.raw_user_meta_data->>'full_name',
-    NEW.raw_user_meta_data->>'name',
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'display_name'), ''),
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'full_name'), ''),
+    NULLIF(TRIM(NEW.raw_user_meta_data->>'name'), ''),
     split_part(NEW.email, '@', 1)
   );
-  v_provider := COALESCE(NEW.raw_app_meta_data->>'provider', 'email');
 
-  IF v_provider = 'email' THEN
-    IF v_code IS NULL OR v_code = '' OR NOT public.validate_invite_code(v_code) THEN
-      RAISE EXCEPTION 'Cod de invitatie invalid sau lipsa. Foloseste: OMDworldcup2026';
-    END IF;
-    UPDATE public.invite_codes
-    SET uses_count = uses_count + 1
-    WHERE LOWER(TRIM(code)) = LOWER(v_code);
+  IF v_code IS NULL OR v_code = '' OR NOT public.validate_invite_code(v_code) THEN
+    RAISE EXCEPTION 'Cod de invitatie invalid sau lipsa. Foloseste: OMDworldcup2026';
   END IF;
+
+  UPDATE public.invite_codes
+  SET uses_count = uses_count + 1
+  WHERE LOWER(TRIM(code)) = LOWER(v_code);
 
   INSERT INTO public.profiles (id, email, display_name, avatar_url)
   VALUES (NEW.id, NEW.email, v_name, NEW.raw_user_meta_data->>'avatar_url');

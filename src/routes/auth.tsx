@@ -2,7 +2,6 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { supabase } from "@/integrations/supabase/client";
-import { signInWithGoogle } from "@/lib/auth/google-sign-in";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,6 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { toast } from "sonner";
 import { Trophy, Sparkles } from "lucide-react";
 import heroImg from "@/assets/wc2026-hero.svg";
+
+const INVITE_CODE = "OMDworldcup2026";
 
 const searchSchema = z.object({ tab: z.enum(["login", "signup"]).optional() });
 
@@ -31,21 +32,12 @@ function AuthPage() {
     });
   }, [navigate]);
 
-  const handleGoogle = async () => {
-    setLoading(true);
-    const { error } = await signInWithGoogle();
-    if (error) {
-      toast.error(error.message);
-      setLoading(false);
-    }
-  };
-
   const handleLogin = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     const fd = new FormData(e.currentTarget);
     const { error } = await supabase.auth.signInWithPassword({
-      email: String(fd.get("email")),
+      email: String(fd.get("email")).trim(),
       password: String(fd.get("password")),
     });
     setLoading(false);
@@ -58,20 +50,28 @@ function AuthPage() {
     e.preventDefault();
     setLoading(true);
     const fd = new FormData(e.currentTarget);
-    const email = String(fd.get("email"));
+    const email = String(fd.get("email")).trim();
     const password = String(fd.get("password"));
-    const display_name = String(fd.get("name"));
-    const invite_code = String(fd.get("invite"));
+    const display_name = String(fd.get("name")).trim();
+    const invite_code = String(fd.get("invite")).trim();
+
+    if (!invite_code) {
+      setLoading(false);
+      return toast.error("Codul de invitație este obligatoriu.");
+    }
+
     const { data, error } = await supabase.auth.signUp({
       email,
       password,
-      options: { data: { display_name, invite_code }, emailRedirectTo: window.location.origin + "/matches" },
+      options: {
+        data: { display_name, invite_code },
+      },
     });
     setLoading(false);
     if (error) {
       const hint =
         error.message.includes("Database error") || error.status === 500
-          ? `${error.message} — Verifică migrările SQL pe Supabase și codul OMDworldcup2026. Vezi docs/supabase-setup.md`
+          ? `${error.message} — Rulează migrarea 20260605170000_email_only_signup.sql pe Supabase.`
           : error.message;
       return toast.error(hint);
     }
@@ -80,13 +80,12 @@ function AuthPage() {
       navigate({ to: "/matches" });
       return;
     }
-    toast.success("Cont creat! Verifică emailul pentru confirmare, apoi login.");
+    toast.success("Cont creat! Te poți autentifica acum.");
     navigate({ to: "/auth", search: { tab: "login" } });
   };
 
   return (
     <div className="grid min-h-screen md:grid-cols-2">
-      {/* Visual side */}
       <div className="relative hidden overflow-hidden bg-[oklch(0.16_0.05_260)] md:block">
         <img src={heroImg} alt="" className="absolute inset-0 h-full w-full object-cover opacity-60" />
         <div className="absolute inset-0 bg-gradient-to-tr from-[oklch(0.16_0.05_260)] via-[oklch(0.16_0.05_260)]/40 to-transparent" />
@@ -111,7 +110,6 @@ function AuthPage() {
         </div>
       </div>
 
-      {/* Form side */}
       <div className="flex items-center justify-center bg-background p-6">
         <Card className="w-full max-w-md border-border/60 shadow-[var(--shadow-elegant)]">
           <CardHeader className="text-center">
@@ -120,7 +118,7 @@ function AuthPage() {
             </div>
             <CardTitle className="text-2xl">Bun venit la totalizator</CardTitle>
             <CardDescription>
-              Autentifică-te ca să trimiți pronosticuri. Contul de admin e separat — trebuie să te înregistrezi sau să te loghezi mai întâi.
+              Autentificare doar cu email și parolă. La înregistrare ai nevoie de cod de invitație.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -132,29 +130,25 @@ function AuthPage() {
 
               <TabsContent value="login">
                 <form onSubmit={handleLogin} className="space-y-3">
-                  <div><Label>Email</Label><Input name="email" type="email" required /></div>
-                  <div><Label>Parolă</Label><Input name="password" type="password" required /></div>
+                  <div><Label>Email</Label><Input name="email" type="email" required autoComplete="email" /></div>
+                  <div><Label>Parolă</Label><Input name="password" type="password" required autoComplete="current-password" /></div>
                   <Button type="submit" className="w-full" disabled={loading}>Login</Button>
                 </form>
               </TabsContent>
 
               <TabsContent value="signup">
                 <form onSubmit={handleSignup} className="space-y-3">
-                  <div><Label>Nume afișat</Label><Input name="name" required /></div>
-                  <div><Label>Email</Label><Input name="email" type="email" required /></div>
-                  <div><Label>Parolă</Label><Input name="password" type="password" required minLength={6} /></div>
-                  <div><Label>Cod invitație</Label><Input name="invite" required placeholder="OMDworldcup2026" /></div>
+                  <div><Label>Nume afișat</Label><Input name="name" required autoComplete="name" /></div>
+                  <div><Label>Email</Label><Input name="email" type="email" required autoComplete="email" /></div>
+                  <div><Label>Parolă</Label><Input name="password" type="password" required minLength={6} autoComplete="new-password" /></div>
+                  <div>
+                    <Label>Cod invitație</Label>
+                    <Input name="invite" required placeholder={INVITE_CODE} autoComplete="off" />
+                  </div>
                   <Button type="submit" className="w-full" disabled={loading}>Creează cont</Button>
                 </form>
               </TabsContent>
             </Tabs>
-
-            <div className="my-4 flex items-center gap-2 text-xs text-muted-foreground">
-              <div className="h-px flex-1 bg-border" /> sau <div className="h-px flex-1 bg-border" />
-            </div>
-            <Button variant="outline" className="w-full" onClick={handleGoogle} disabled={loading}>
-              Continuă cu Google
-            </Button>
           </CardContent>
         </Card>
       </div>
