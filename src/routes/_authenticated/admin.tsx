@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { syncFootballData } from "@/lib/api/sync.functions";
 
 type Match = {
   id: string;
@@ -162,6 +163,7 @@ function TeamsTab() {
 function MatchesTab() {
   const [teams, setTeams] = useState<Team[]>([]);
   const [matches, setMatches] = useState<Match[]>([]);
+  const [syncing, setSyncing] = useState(false);
   const load = async () => {
     const [{ data: t }, { data: m }] = await Promise.all([
       supabase.from("teams").select("*").order("name"),
@@ -171,6 +173,21 @@ function MatchesTab() {
     setMatches((m ?? []) as unknown as Match[]);
   };
   useEffect(() => { load(); }, []);
+
+  const syncFromApi = async () => {
+    setSyncing(true);
+    try {
+      const result = await syncFootballData();
+      toast.success(
+        `Sync complet: ${result.teamsUpserted} echipe, ${result.matchesUpserted} meciuri`,
+      );
+      await load();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Sync eșuat");
+    } finally {
+      setSyncing(false);
+    }
+  };
 
   const add = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -190,6 +207,17 @@ function MatchesTab() {
 
   return (
     <Card><CardContent className="space-y-4 pt-6">
+      <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg border bg-muted/40 p-3">
+        <div>
+          <p className="text-sm font-medium">Sincronizare football-data.org</p>
+          <p className="text-xs text-muted-foreground">
+            Importă echipe și meciuri CM 2026 (plan gratuit: scoruri cu întârziere).
+          </p>
+        </div>
+        <Button type="button" variant="secondary" disabled={syncing} onClick={syncFromApi}>
+          {syncing ? "Se sincronizează…" : "Sync din football-data.org"}
+        </Button>
+      </div>
       <form onSubmit={add} className="grid grid-cols-2 gap-2 md:grid-cols-4">
         <Select name="home"><SelectTrigger><SelectValue placeholder="Acasă" /></SelectTrigger>
           <SelectContent>{teams.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}</SelectContent>
@@ -202,10 +230,10 @@ function MatchesTab() {
         <Select name="stage" defaultValue="group"><SelectTrigger><SelectValue /></SelectTrigger>
           <SelectContent>
             <SelectItem value="group">Grupe</SelectItem>
-            <SelectItem value="round_of_32">16-imi</SelectItem>
-            <SelectItem value="round_of_16">Optimi</SelectItem>
-            <SelectItem value="quarter_final">Sferturi</SelectItem>
-            <SelectItem value="semi_final">Semifinale</SelectItem>
+            <SelectItem value="r32">32-imi</SelectItem>
+            <SelectItem value="r16">16-imi</SelectItem>
+            <SelectItem value="qf">Sferturi</SelectItem>
+            <SelectItem value="sf">Semifinale</SelectItem>
             <SelectItem value="third_place">Locul 3</SelectItem>
             <SelectItem value="final">Finală</SelectItem>
           </SelectContent>
