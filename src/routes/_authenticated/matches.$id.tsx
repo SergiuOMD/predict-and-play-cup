@@ -61,13 +61,19 @@ function MatchDetail() {
     // Try to load everyone's predictions (will only work after kickoff per RLS)
     const { data: all } = await supabase
       .from("predictions")
-      .select("score1_home,score1_away,score2_home,score2_away,score3_home,score3_away,points,profiles!predictions_user_id_fkey(display_name,avatar_url)")
+      .select("user_id,score1_home,score1_away,score2_home,score2_away,score3_home,score3_away,points")
       .eq("match_id", id);
-    if (all) {
-      setAllPreds(all.map((r: { score1_home: number; score1_away: number; score2_home: number; score2_away: number; score3_home: number; score3_away: number; points: number; profiles: { display_name: string; avatar_url: string | null } | null }) => ({
-        ...r,
-        display_name: r.profiles?.display_name ?? "Anonim",
-        avatar_url: r.profiles?.avatar_url ?? null,
+    if (all && all.length > 0) {
+      const ids = Array.from(new Set(all.map((r) => r.user_id)));
+      const { data: profs } = await supabase.from("profiles").select("id,display_name,avatar_url").in("id", ids);
+      const pmap = new Map((profs ?? []).map((p) => [p.id, p]));
+      setAllPreds(all.map((r) => ({
+        score1_home: r.score1_home, score1_away: r.score1_away,
+        score2_home: r.score2_home, score2_away: r.score2_away,
+        score3_home: r.score3_home, score3_away: r.score3_away,
+        points: r.points,
+        display_name: pmap.get(r.user_id)?.display_name ?? "Anonim",
+        avatar_url: pmap.get(r.user_id)?.avatar_url ?? null,
       })));
     }
   };
