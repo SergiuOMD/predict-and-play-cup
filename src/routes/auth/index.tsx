@@ -20,7 +20,7 @@ function validateAuthSearch(search: Record<string, unknown>) {
   return searchSchema.parse(stripSensitiveFromSearchRecord(search));
 }
 
-export const Route = createFileRoute("/auth")({
+export const Route = createFileRoute("/auth/")({
   ssr: false,
   validateSearch: validateAuthSearch,
   beforeLoad: ({ location }) => {
@@ -128,21 +128,21 @@ function AuthPage() {
           <TabsTrigger value="signup">Înregistrare</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="login">
-          <form method="post" action="/auth" onSubmit={handleLogin} className="space-y-3" autoComplete="on">
+        <TabsContent value="login" className="space-y-3">
+          <form method="post" onSubmit={handleLogin} className="space-y-3" autoComplete="on">
             <div><Label htmlFor="login-email">Email</Label><Input id="login-email" name="email" type="email" required autoComplete="email" /></div>
             <div><Label htmlFor="login-password">Parolă</Label><Input id="login-password" name="password" type="password" required autoComplete="current-password" /></div>
-            <div className="text-right">
-              <Link to="/auth/forgot-password" className="text-sm text-primary underline-offset-4 hover:underline">
-                Am uitat parola
-              </Link>
-            </div>
             <Button type="submit" className="w-full" disabled={loading}>Login</Button>
           </form>
+          <p className="text-right">
+            <Link to="/auth/forgot-password" className="text-sm text-primary underline-offset-4 hover:underline">
+              Am uitat parola
+            </Link>
+          </p>
         </TabsContent>
 
         <TabsContent value="signup">
-          <form method="post" action="/auth" onSubmit={handleSignup} className="space-y-3" autoComplete="on">
+          <form method="post" onSubmit={handleSignup} className="space-y-3" autoComplete="on">
             <div><Label htmlFor="signup-name">Nume afișat</Label><Input id="signup-name" name="name" required autoComplete="name" /></div>
             <div><Label htmlFor="signup-email">Email</Label><Input id="signup-email" name="email" type="email" required autoComplete="email" /></div>
             <div><Label htmlFor="signup-password">Parolă</Label><Input id="signup-password" name="password" type="password" required minLength={6} autoComplete="new-password" /></div>
