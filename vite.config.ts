@@ -6,6 +6,7 @@
 // You can pass additional config via defineConfig({ vite: { ... }, etc... }) if needed.
 import { defineConfig } from "@lovable.dev/vite-tanstack-config";
 import { VitePWA } from "vite-plugin-pwa";
+import netlify from "@netlify/vite-plugin-tanstack-start";
 
 const PWA_THEME = "#1a2238";
 
@@ -14,8 +15,10 @@ const isLanDev =
   || process.env.npm_lifecycle_event === "preview:lan";
 
 export default defineConfig({
+  nitro: false,
   vite: {
     plugins: [
+	  netlify(),
       VitePWA({
         registerType: "autoUpdate",
         includeAssets: ["favicon.svg", "icon-192.png", "icon-512.png", "apple-touch-icon.png"],
