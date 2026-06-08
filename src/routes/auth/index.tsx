@@ -154,6 +154,11 @@ function AuthPage() {
           </form>
         </TabsContent>
       </Tabs>
+      <p className="pt-2 text-center text-sm text-muted-foreground">
+        <Link to="/regulament" className="text-primary underline-offset-4 hover:underline">
+          Regulament
+        </Link>
+      </p>
     </AuthShell>
   );
 }

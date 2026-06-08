@@ -2,7 +2,7 @@ import { createFileRoute, Outlet, redirect, Link, useNavigate, useRouterState } 
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Trophy, LogOut, Calendar, Grid3x3, Medal, Star, Shield, ClipboardList } from "lucide-react";
+import { Trophy, LogOut, Calendar, Grid3x3, Medal, Star, Shield, ClipboardList, ScrollText } from "lucide-react";
 import { Toaster } from "@/components/ui/sonner";
 import { cn } from "@/lib/utils";
 
@@ -22,6 +22,7 @@ const NAV = [
   { to: "/groups", label: "Grupe", icon: Grid3x3 },
   { to: "/leaderboard", label: "Clasament", icon: Medal },
   { to: "/bonus", label: "Bonus", icon: Star },
+  { to: "/regulament", label: "Regulament", icon: ScrollText },
 ] as const;
 
 function AuthedLayout() {

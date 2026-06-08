@@ -30,7 +30,10 @@ function Landing() {
             </div>
             <span className="truncate text-sm tracking-tight sm:text-base">{BRAND_FULL}</span>
           </div>
-          <div className="flex shrink-0 gap-2">
+          <div className="flex shrink-0 items-center gap-2">
+            <Button asChild variant="ghost" size="sm" className="hidden text-white hover:bg-white/10 hover:text-white sm:inline-flex">
+              <Link to="/regulament">Regulament</Link>
+            </Button>
             <Button asChild variant="ghost" className="text-white hover:bg-white/10 hover:text-white">
               <Link to="/auth">Login</Link>
             </Button>
@@ -129,7 +132,12 @@ function Landing() {
       </section>
 
       <footer className="border-t border-white/10 py-6 text-center text-xs text-white/40">
-        {BRAND} · Just for fun · Niciun ban implicat
+        <p>{BRAND} · Just for fun · Niciun ban implicat</p>
+        <p className="mt-2">
+          <Link to="/regulament" className="text-white/60 underline-offset-4 hover:text-white hover:underline">
+            Regulament
+          </Link>
+        </p>
       </footer>
     </div>
   );

@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as RegulamentRouteImport } from './routes/regulament'
 import { Route as AuthRouteRouteImport } from './routes/auth/route'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as IndexRouteImport } from './routes/index'
@@ -24,6 +25,11 @@ import { Route as AuthenticatedAdminRouteImport } from './routes/_authenticated/
 import { Route as AuthenticatedMatchesIndexRouteImport } from './routes/_authenticated/matches.index'
 import { Route as AuthenticatedMatchesIdRouteImport } from './routes/_authenticated/matches.$id'
 
+const RegulamentRoute = RegulamentRouteImport.update({
+  id: '/regulament',
+  path: '/regulament',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AuthRouteRoute = AuthRouteRouteImport.update({
   id: '/auth',
   path: '/auth',
@@ -100,6 +106,7 @@ const AuthenticatedMatchesIdRoute = AuthenticatedMatchesIdRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRouteRouteWithChildren
+  '/regulament': typeof RegulamentRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bonus': typeof AuthenticatedBonusRoute
   '/groups': typeof AuthenticatedGroupsRoute
@@ -114,6 +121,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/regulament': typeof RegulamentRoute
   '/admin': typeof AuthenticatedAdminRoute
   '/bonus': typeof AuthenticatedBonusRoute
   '/groups': typeof AuthenticatedGroupsRoute
@@ -130,6 +138,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
   '/auth': typeof AuthRouteRouteWithChildren
+  '/regulament': typeof RegulamentRoute
   '/_authenticated/admin': typeof AuthenticatedAdminRoute
   '/_authenticated/bonus': typeof AuthenticatedBonusRoute
   '/_authenticated/groups': typeof AuthenticatedGroupsRoute
@@ -147,6 +156,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
+    | '/regulament'
     | '/admin'
     | '/bonus'
     | '/groups'
@@ -161,6 +171,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/regulament'
     | '/admin'
     | '/bonus'
     | '/groups'
@@ -176,6 +187,7 @@ export interface FileRouteTypes {
     | '/'
     | '/_authenticated'
     | '/auth'
+    | '/regulament'
     | '/_authenticated/admin'
     | '/_authenticated/bonus'
     | '/_authenticated/groups'
@@ -193,10 +205,18 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
   AuthRouteRoute: typeof AuthRouteRouteWithChildren
+  RegulamentRoute: typeof RegulamentRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/regulament': {
+      id: '/regulament'
+      path: '/regulament'
+      fullPath: '/regulament'
+      preLoaderRoute: typeof RegulamentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth': {
       id: '/auth'
       path: '/auth'
@@ -352,6 +372,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
   AuthRouteRoute: AuthRouteRouteWithChildren,
+  RegulamentRoute: RegulamentRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
