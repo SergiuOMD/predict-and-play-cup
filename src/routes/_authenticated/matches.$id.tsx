@@ -25,11 +25,40 @@ type Match = {
   away_team: { name: string; code: string | null; flag_emoji: string | null } | null;
 };
 type Pred = {
+  score1_home: string; score1_away: string;
+  score2_home: string; score2_away: string;
+  score3_home: string; score3_away: string;
+  points: number;
+};
+
+const EMPTY_PRED: Pred = {
+  score1_home: "", score1_away: "",
+  score2_home: "", score2_away: "",
+  score3_home: "", score3_away: "",
+  points: 0,
+};
+
+function predFromDb(row: {
   score1_home: number; score1_away: number;
   score2_home: number; score2_away: number;
   score3_home: number; score3_away: number;
   points: number;
-};
+}): Pred {
+  return {
+    score1_home: String(row.score1_home), score1_away: String(row.score1_away),
+    score2_home: String(row.score2_home), score2_away: String(row.score2_away),
+    score3_home: String(row.score3_home), score3_away: String(row.score3_away),
+    points: row.points,
+  };
+}
+
+function parseScore(value: string): number | null {
+  const trimmed = value.trim();
+  if (trimmed === "") return null;
+  const n = Number(trimmed);
+  if (!Number.isInteger(n) || n < 0 || n > 30) return null;
+  return n;
+}
 
 export const Route = createFileRoute("/_authenticated/matches/$id")({
   component: MatchDetail,
@@ -39,12 +68,7 @@ function MatchDetail() {
   const { id } = Route.useParams();
   const navigate = useNavigate();
   const [match, setMatch] = useState<Match | null>(null);
-  const [pred, setPred] = useState<Pred>({
-    score1_home: 0, score1_away: 0,
-    score2_home: 0, score2_away: 0,
-    score3_home: 0, score3_away: 0,
-    points: 0,
-  });
+  const [pred, setPred] = useState<Pred>(EMPTY_PRED);
   const [hasPred, setHasPred] = useState(false);
   const [allPreds, setAllPreds] = useState<Array<{
     display_name: string;
@@ -76,7 +100,7 @@ function MatchDetail() {
         supabase.from("predictions").select("score1_home,score1_away,score2_home,score2_away,score3_home,score3_away,points").eq("match_id", id).eq("user_id", u.user.id).maybeSingle(),
         supabase.from("profiles").select("disqualified,disqualified_reason").eq("id", u.user.id).maybeSingle(),
       ]);
-      if (p) { setPred(p); setHasPred(true); }
+      if (p) { setPred(predFromDb(p)); setHasPred(true); }
       setDisqualified(!!prof?.disqualified);
       setDisqualifyReason(prof?.disqualified_reason ?? null);
     }
@@ -144,25 +168,61 @@ function MatchDetail() {
 
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
+    const score1_home = parseScore(pred.score1_home);
+    const score1_away = parseScore(pred.score1_away);
+    const score2_home = parseScore(pred.score2_home);
+    const score2_away = parseScore(pred.score2_away);
+    const score3_home = parseScore(pred.score3_home);
+    const score3_away = parseScore(pred.score3_away);
+
+    if ([score1_home, score1_away, score2_home, score2_away, score3_home, score3_away].some((v) => v === null)) {
+      return toast.error("Completează toate cele 6 scoruri (0–30).");
+    }
+
     setSaving(true);
     const { data: u } = await supabase.auth.getUser();
-    if (!u.user) return;
-    const payload = { ...pred, user_id: u.user.id, match_id: id };
+    if (!u.user) {
+      setSaving(false);
+      return;
+    }
+    const payload = {
+      score1_home: score1_home!,
+      score1_away: score1_away!,
+      score2_home: score2_home!,
+      score2_away: score2_away!,
+      score3_home: score3_home!,
+      score3_away: score3_away!,
+      user_id: u.user.id,
+      match_id: id,
+    };
     const { error } = hasPred
-      ? await supabase.from("predictions").update(pred).eq("user_id", u.user.id).eq("match_id", id)
+      ? await supabase.from("predictions").update(payload).eq("user_id", u.user.id).eq("match_id", id)
       : await supabase.from("predictions").insert(payload);
     setSaving(false);
     if (error) return toast.error(error.message);
     toast.success("Pronosticuri salvate!");
     setHasPred(true);
+    setPred((prev) => ({
+      ...prev,
+      score1_home: String(score1_home),
+      score1_away: String(score1_away),
+      score2_home: String(score2_home),
+      score2_away: String(score2_away),
+      score3_home: String(score3_home),
+      score3_away: String(score3_away),
+    }));
   };
 
   const numField = (key: keyof Pred) => (
     <Input
-      type="number" min={0} max={30} required
-      className="h-12 w-14 border-[var(--wc-light-gray)] text-center text-lg font-bold"
-      value={pred[key] as number}
-      onChange={(e) => setPred({ ...pred, [key]: Number(e.target.value) || 0 })}
+      type="number"
+      min={0}
+      max={30}
+      inputMode="numeric"
+      placeholder="—"
+      className="h-12 w-14 border-[var(--wc-light-gray)] text-center text-lg font-bold placeholder:font-normal placeholder:text-muted-foreground/50"
+      value={pred[key] as string}
+      onChange={(e) => setPred({ ...pred, [key]: e.target.value })}
       disabled={locked}
     />
   );

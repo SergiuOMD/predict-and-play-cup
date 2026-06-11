@@ -17,7 +17,7 @@ import { PageHeader } from "@/components/app/page-header";
 import { TeamFlag } from "@/components/app/team-flag";
 import { resolveFlagEmoji } from "@/lib/team-flags";
 import { Badge } from "@/components/ui/badge";
-import { Shield, Trash2, UserX, UserCheck } from "lucide-react";
+import { Shield, Trash2, UserX, UserCheck, Pencil } from "lucide-react";
 import { isMatchOpen } from "@/lib/match-utils";
 import { formatPredictionScoresCsv } from "@/lib/prediction-utils";
 
@@ -465,6 +465,9 @@ function UsersTab() {
   const [users, setUsers] = useState<ProfileRow[]>([]);
   const [myId, setMyId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
+  const [savingName, setSavingName] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -509,6 +512,28 @@ function UsersTab() {
     load();
   };
 
+  const startEditName = (user: ProfileRow) => {
+    setEditingId(user.id);
+    setEditName(user.display_name);
+  };
+
+  const cancelEditName = () => {
+    setEditingId(null);
+    setEditName("");
+  };
+
+  const saveName = async (userId: string) => {
+    const trimmed = editName.trim();
+    if (!trimmed) return toast.error("Numele afișat nu poate fi gol.");
+    setSavingName(true);
+    const { error } = await supabase.from("profiles").update({ display_name: trimmed }).eq("id", userId);
+    setSavingName(false);
+    if (error) return toast.error(error.message);
+    toast.success("Nume actualizat");
+    cancelEditName();
+    load();
+  };
+
   const activeCount = users.filter((u) => !u.disqualified).length;
 
   return (
@@ -523,25 +548,52 @@ function UsersTab() {
         {loading && <p className="text-muted-foreground">Se încarcă...</p>}
         {users.map((u) => (
           <div key={u.id} className="flex flex-wrap items-center justify-between gap-2 rounded-lg border p-3 text-sm">
-            <div className="min-w-0">
-              <div className="flex flex-wrap items-center gap-2 font-semibold">
-                <span>{u.display_name}</span>
-                {u.disqualified ? (
-                  <Badge variant="outline" className="border-[var(--wc-red)]/30 bg-[#fde8e9] text-[var(--wc-red)]">
-                    Descalificat
-                  </Badge>
-                ) : (
-                  <Badge variant="outline" className="border-[var(--wc-green)]/30 bg-[#e8f5e8] text-[#2d7a2c]">
-                    Activ
-                  </Badge>
-                )}
-              </div>
+            <div className="min-w-0 flex-1">
+              {editingId === u.id ? (
+                <div className="flex flex-wrap items-center gap-2">
+                  <Input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="h-8 max-w-xs"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") saveName(u.id);
+                      if (e.key === "Escape") cancelEditName();
+                    }}
+                  />
+                  <Button size="sm" onClick={() => saveName(u.id)} disabled={savingName}>
+                    Salvează
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={cancelEditName}>
+                    Anulează
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex flex-wrap items-center gap-2 font-semibold">
+                  <span>{u.display_name}</span>
+                  {u.disqualified ? (
+                    <Badge variant="outline" className="border-[var(--wc-red)]/30 bg-[#fde8e9] text-[var(--wc-red)]">
+                      Descalificat
+                    </Badge>
+                  ) : (
+                    <Badge variant="outline" className="border-[var(--wc-green)]/30 bg-[#e8f5e8] text-[#2d7a2c]">
+                      Activ
+                    </Badge>
+                  )}
+                </div>
+              )}
               <p className="text-xs text-muted-foreground">{u.email}</p>
               {u.disqualified && u.disqualified_reason && (
                 <p className="mt-1 text-xs text-[var(--wc-red)]">Motiv: {u.disqualified_reason}</p>
               )}
             </div>
             <div className="flex gap-2">
+              {editingId !== u.id && (
+                <Button size="sm" variant="outline" className="gap-1" onClick={() => startEditName(u)}>
+                  <Pencil className="h-3.5 w-3.5" />
+                  Nume
+                </Button>
+              )}
               {u.disqualified ? (
                 <Button size="sm" variant="outline" className="gap-1" onClick={() => requalify(u)}>
                   <UserCheck className="h-3.5 w-3.5" />
