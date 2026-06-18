@@ -1,5 +1,5 @@
--- Statistici extinse clasament (superseded by 20260608130000_leaderboard_finished_matches.sql)
--- Păstrat pentru istoric migrări; versiunea curentă filtrează doar meciuri finalizate.
+-- Statistici clasament: doar meciuri finalizate (scoruri ghicite/prognozate, rată, departajare)
+-- DROP necesar: CREATE OR REPLACE nu permite reordonarea coloanelor view-ului.
 
 DROP VIEW IF EXISTS public.leaderboard;
 

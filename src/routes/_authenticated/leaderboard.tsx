@@ -67,6 +67,7 @@ function LeaderboardStats({ row, compact = false }: { row: Row; compact?: boolea
         Scoruri ghicite: <span className="font-medium text-foreground">{row.guessed_scores}</span>
         {" · "}
         Scoruri prognozate: <span className="font-medium text-foreground">{row.predicted_scores}</span>
+        <span className="block text-[10px] opacity-80 sm:inline sm:before:content-['·_']">doar meciuri finalizate</span>
       </p>
       <p>
         Meciuri prognozate: <span className="font-medium text-foreground">{row.matches_predicted}</span>
@@ -142,7 +143,7 @@ function LeaderboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Clasament"
-        description="Puncte totale, apoi meciuri prognozate la egalitate. Sub fiecare nume vezi scorurile ghicite vs prognozate."
+        description="Statistici și departajare pe meciuri finalizate. Puncte totale includ și bonusul."
         icon={<Medal className="h-5 w-5 text-white" />}
       />
 
@@ -200,7 +201,7 @@ function LeaderboardPage() {
                 <Trophy className="h-4 w-4" /> Clasament complet
               </h2>
               <p className="mt-1 text-xs text-muted-foreground">
-                Departajare: puncte totale → meciuri prognozate
+                Departajare: puncte totale → meciuri finalizate prognozate
               </p>
             </div>
             <ol className="divide-y">
