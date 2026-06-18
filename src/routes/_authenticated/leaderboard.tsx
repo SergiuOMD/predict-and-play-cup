@@ -15,13 +15,79 @@ type Row = {
   champion_points: number;
   top_scorer_points: number;
   total_points: number;
-  predictions_count: number;
+  guessed_scores: number;
+  predicted_scores: number;
+  matches_predicted: number;
 };
 
 export const Route = createFileRoute("/_authenticated/leaderboard")({
   head: () => ({ meta: [{ title: "Clasament · ORBICO WC2026" }] }),
   component: LeaderboardPage,
 });
+
+function sortLeaderboard(rows: Row[]): Row[] {
+  return [...rows].sort(
+    (a, b) =>
+      b.total_points - a.total_points
+      || b.matches_predicted - a.matches_predicted
+      || b.guessed_scores - a.guessed_scores,
+  );
+}
+
+function normalizeRow(row: Record<string, unknown>): Row {
+  const matches = Number(row.matches_predicted ?? row.predictions_count ?? 0);
+  const guessed = Number(row.guessed_scores ?? row.match_points ?? 0);
+  const predicted = Number(row.predicted_scores ?? matches * 3);
+  return {
+    user_id: String(row.user_id),
+    display_name: String(row.display_name ?? "Participant"),
+    avatar_url: (row.avatar_url as string | null) ?? null,
+    match_points: Number(row.match_points ?? 0),
+    champion_points: Number(row.champion_points ?? 0),
+    top_scorer_points: Number(row.top_scorer_points ?? 0),
+    total_points: Number(row.total_points ?? 0),
+    guessed_scores: guessed,
+    predicted_scores: predicted,
+    matches_predicted: matches,
+  };
+}
+
+function accuracyPercent(guessed: number, predicted: number): number | null {
+  if (predicted <= 0) return null;
+  return Math.round((guessed / predicted) * 100);
+}
+
+function LeaderboardStats({ row, compact = false }: { row: Row; compact?: boolean }) {
+  const pct = accuracyPercent(row.guessed_scores, row.predicted_scores);
+  const bonus = row.champion_points + row.top_scorer_points;
+
+  return (
+    <div className={cn("space-y-0.5 text-muted-foreground", compact ? "text-[10px]" : "text-xs")}>
+      <p>
+        Scoruri ghicite: <span className="font-medium text-foreground">{row.guessed_scores}</span>
+        {" · "}
+        Scoruri prognozate: <span className="font-medium text-foreground">{row.predicted_scores}</span>
+      </p>
+      <p>
+        Meciuri prognozate: <span className="font-medium text-foreground">{row.matches_predicted}</span>
+        {pct !== null && (
+          <>
+            {" · "}
+            Rată:{" "}
+            <span className="font-medium text-[var(--wc-hermes)]">
+              {pct}% ({row.guessed_scores}/{row.predicted_scores})
+            </span>
+          </>
+        )}
+      </p>
+      {bonus > 0 && (
+        <p className="text-[10px] opacity-80">
+          {row.match_points} pct meciuri · {bonus} pct bonus
+        </p>
+      )}
+    </div>
+  );
+}
 
 const PODIUM_STYLES = [
   {
@@ -56,10 +122,7 @@ function LeaderboardPage() {
 
   const load = async () => {
     const { data } = await supabase.from("leaderboard").select("*");
-    const sorted = ((data ?? []) as Row[]).sort(
-      (a, b) => b.total_points - a.total_points || b.predictions_count - a.predictions_count,
-    );
-    setRows(sorted);
+    setRows(sortLeaderboard((data ?? []).map((r) => normalizeRow(r as Record<string, unknown>))));
   };
 
   useEffect(() => {
@@ -79,7 +142,7 @@ function LeaderboardPage() {
     <div className="space-y-6">
       <PageHeader
         title="Clasament"
-        description="Puncte din meciuri + predicții bonus. Actualizare live."
+        description="Puncte totale, apoi meciuri prognozate la egalitate. Sub fiecare nume vezi scorurile ghicite vs prognozate."
         icon={<Medal className="h-5 w-5 text-white" />}
       />
 
@@ -94,7 +157,7 @@ function LeaderboardPage() {
             <div
               className={cn(
                 "grid grid-cols-1 gap-4 sm:items-stretch",
-                top3.length === 1 && "sm:grid-cols-1 sm:max-w-sm sm:mx-auto",
+                top3.length === 1 && "sm:mx-auto sm:max-w-sm sm:grid-cols-1",
                 top3.length === 2 && "sm:grid-cols-[1.15fr_1fr]",
                 top3.length >= 3 && "sm:grid-cols-[1.15fr_1fr_1fr]",
               )}
@@ -122,6 +185,9 @@ function LeaderboardPage() {
                     <p className={cn("mt-2 font-bold", idx === 0 && "text-base")}>{r.display_name}</p>
                     <p className={cn("font-black text-[var(--wc-hermes)]", style.score)}>{r.total_points}</p>
                     <p className="text-xs text-muted-foreground">puncte</p>
+                    <div className="mt-3 w-full text-left">
+                      <LeaderboardStats row={r} compact />
+                    </div>
                   </div>
                 );
               })}
@@ -133,13 +199,16 @@ function LeaderboardPage() {
               <h2 className="flex items-center gap-2 font-bold text-[var(--wc-hermes)]">
                 <Trophy className="h-4 w-4" /> Clasament complet
               </h2>
+              <p className="mt-1 text-xs text-muted-foreground">
+                Departajare: puncte totale → meciuri prognozate
+              </p>
             </div>
             <ol className="divide-y">
               {rows.map((r, i) => (
                 <li
                   key={r.user_id}
                   className={cn(
-                    "flex items-center gap-3 px-5 py-4 transition-colors",
+                    "flex items-start gap-3 px-5 py-4 transition-colors sm:items-center",
                     r.user_id === me && "bg-[var(--wc-green)]/8",
                   )}
                 >
@@ -151,7 +220,7 @@ function LeaderboardPage() {
                   >
                     {i + 1}
                   </span>
-                  <Avatar className="h-9 w-9">
+                  <Avatar className="h-9 w-9 shrink-0">
                     <AvatarImage src={r.avatar_url ?? undefined} />
                     <AvatarFallback>{r.display_name.charAt(0).toUpperCase()}</AvatarFallback>
                   </Avatar>
@@ -162,9 +231,7 @@ function LeaderboardPage() {
                         <span className="ml-2 text-xs font-medium text-[var(--wc-green)]">(tu)</span>
                       )}
                     </div>
-                    <div className="text-xs text-muted-foreground">
-                      {r.match_points} meciuri · {r.champion_points + r.top_scorer_points} bonus
-                    </div>
+                    <LeaderboardStats row={r} />
                   </div>
                   <Badge className="shrink-0 bg-[var(--wc-hermes)] text-base font-bold hover:bg-[var(--wc-hermes)]">
                     {r.total_points}

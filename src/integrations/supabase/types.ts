@@ -368,7 +368,10 @@ export type Database = {
           avatar_url: string | null
           champion_points: number | null
           display_name: string | null
+          guessed_scores: number | null
           match_points: number | null
+          matches_predicted: number | null
+          predicted_scores: number | null
           predictions_count: number | null
           top_scorer_points: number | null
           total_points: number | null
