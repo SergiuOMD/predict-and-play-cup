@@ -1,3 +1,4 @@
+import { formatDayTimeRange } from "@/lib/match-stage";
 import { getMatchStatus } from "@/lib/match-utils";
 
 export type MatchDayLike = {
@@ -53,9 +54,15 @@ export function openDayKeys(groups: MatchDayGroup<MatchDayLike>[]): string[] {
 export function formatDaySummary(matches: MatchDayLike[]): string {
   const total = matches.length;
   const finished = matches.filter(isMatchFinished).length;
+  const timeRange = formatDayTimeRange(matches);
+
+  let countPart: string;
   if (finished === total) {
-    return `${total} ${total === 1 ? "meci finalizat" : "meciuri finalizate"}`;
+    countPart = `${total} ${total === 1 ? "meci finalizat" : "meciuri finalizate"}`;
+  } else {
+    const pending = total - finished;
+    countPart = `${total} meciuri · ${pending} ${pending === 1 ? "rămas" : "rămase"}`;
   }
-  const pending = total - finished;
-  return `${total} meciuri · ${pending} ${pending === 1 ? "rămas" : "rămase"}`;
+
+  return timeRange ? `${timeRange} · ${countPart}` : countPart;
 }

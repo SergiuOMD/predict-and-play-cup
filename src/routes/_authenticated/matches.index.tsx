@@ -5,8 +5,13 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/app/page-header";
 import { TeamFlag } from "@/components/app/team-flag";
 import { MatchStatusBadge } from "@/components/app/match-status-badge";
-import { MatchDayAccordion } from "@/components/app/match-day-accordion";
-import { groupMatchesByDay } from "@/lib/match-groups";
+import { MatchPhaseTabs } from "@/components/app/match-phase-tabs";
+import {
+  formatKickoffDateShort,
+  formatKickoffTime,
+  getMatchPhaseLabel,
+  partitionMatchesByPhase,
+} from "@/lib/match-stage";
 import { getMatchStatus } from "@/lib/match-utils";
 import { Calendar, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -86,19 +91,19 @@ function MatchesPage() {
     );
   }
 
-  const dayGroups = groupMatchesByDay(matches);
+  const { group, knockout } = partitionMatchesByPhase(matches);
   const openCount = matches.filter((m) => getMatchStatus(m.status, m.kickoff_at, m.home_score) === "open").length;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Meciuri"
-        description={`${matches.length} meciuri · ${openCount} deschise · zilele finalizate sunt collapsed`}
+        description={`${group.length} grupe · ${knockout.length} play-off · ${openCount} deschise · zilele finalizate sunt collapsed`}
         icon={<Calendar className="h-5 w-5 text-white" />}
       />
 
-      <MatchDayAccordion
-        groups={dayGroups}
+      <MatchPhaseTabs
+        matches={matches}
         getMatchKey={(m) => m.id}
         renderMatch={(m) => <MatchRow m={m} />}
       />
@@ -109,7 +114,9 @@ function MatchesPage() {
 function MatchRow({ m }: { m: Match }) {
   const homeName = m.home_team?.name ?? m.home_team_label ?? "TBD";
   const awayName = m.away_team?.name ?? m.away_team_label ?? "TBD";
-  const time = new Date(m.kickoff_at).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
+  const time = formatKickoffTime(m.kickoff_at);
+  const dateShort = formatKickoffDateShort(m.kickoff_at);
+  const phaseLabel = getMatchPhaseLabel(m.stage, m.group_letter);
   const matchStatus = getMatchStatus(m.status, m.kickoff_at, m.home_score);
   const finished = matchStatus === "finished";
   const score = finished ? `${m.home_score} - ${m.away_score}` : undefined;
@@ -124,14 +131,13 @@ function MatchRow({ m }: { m: Match }) {
 
         {/* Desktop */}
         <div className="hidden min-w-0 flex-1 items-center gap-5 px-5 py-3.5 sm:flex">
-          <div className="w-[4.75rem] shrink-0">
+          <div className="w-[5.5rem] shrink-0">
             <p className="text-base font-black tabular-nums leading-none text-[var(--wc-hermes)]">{time}</p>
+            <p className="mt-0.5 text-[10px] capitalize leading-tight text-muted-foreground">{dateShort}</p>
             <div className="mt-1.5 flex flex-col items-start gap-1">
-              {m.group_letter && (
-                <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
-                  Grupa {m.group_letter}
-                </span>
-              )}
+              <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">
+                {phaseLabel}
+              </span>
               <MatchStatusBadge status={matchStatus} score={score} className="px-1.5 py-0 text-[10px]" />
             </div>
           </div>
@@ -158,13 +164,10 @@ function MatchRow({ m }: { m: Match }) {
         {/* Mobile */}
         <div className="flex min-w-0 flex-1 flex-col gap-3 px-4 py-3.5 sm:hidden">
           <div className="flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2">
+            <div className="flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5">
               <span className="text-sm font-black tabular-nums text-[var(--wc-hermes)]">{time}</span>
-              {m.group_letter && (
-                <span className="text-[10px] font-semibold uppercase text-muted-foreground">
-                  Gr {m.group_letter}
-                </span>
-              )}
+              <span className="text-[10px] capitalize text-muted-foreground">{dateShort}</span>
+              <span className="text-[10px] font-semibold uppercase text-muted-foreground">{phaseLabel}</span>
               <MatchStatusBadge status={matchStatus} score={score} className="px-1.5 py-0 text-[10px]" />
             </div>
             <ChevronRight className="h-4 w-4 shrink-0 text-[var(--wc-hermes)]/50 group-hover:text-[var(--wc-hermes)]" />

@@ -3,16 +3,21 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/app/page-header";
-import { MatchDayAccordion } from "@/components/app/match-day-accordion";
+import { MatchPhaseTabs } from "@/components/app/match-phase-tabs";
 import { TeamFlag } from "@/components/app/team-flag";
 import { formatPredictionScores } from "@/lib/prediction-utils";
-import { groupMatchesByDay } from "@/lib/match-groups";
+import {
+  formatKickoffDateShort,
+  formatKickoffTime,
+  getMatchPhaseLabel,
+} from "@/lib/match-stage";
 import { isMatchOpen } from "@/lib/match-utils";
 import { ClipboardList, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Match = {
   id: string;
+  stage: string;
   kickoff_at: string;
   status: string;
   group_letter: string | null;
@@ -62,7 +67,7 @@ function PredictionsPage() {
 
     const { data: allMatches } = await supabase
       .from("matches")
-      .select("id,kickoff_at,status,group_letter,home_score,away_score,home_team_label,away_team_label,home_team:teams!matches_home_team_id_fkey(name,code,flag_emoji),away_team:teams!matches_away_team_id_fkey(name,code,flag_emoji)")
+      .select("id,stage,kickoff_at,status,group_letter,home_score,away_score,home_team_label,away_team_label,home_team:teams!matches_home_team_id_fkey(name,code,flag_emoji),away_team:teams!matches_away_team_id_fkey(name,code,flag_emoji)")
       .order("kickoff_at", { ascending: true });
 
     const open = ((allMatches ?? []) as unknown as Match[]).filter((m) =>
@@ -140,8 +145,6 @@ function PredictionsPage() {
     );
   }
 
-  const dayGroups = groupMatchesByDay(matches);
-
   return (
     <div className="space-y-6">
       <PageHeader
@@ -174,9 +177,11 @@ function PredictionsPage() {
           </p>
         </div>
       ) : (
-        <MatchDayAccordion
-          groups={dayGroups}
+        <MatchPhaseTabs
+          matches={matches}
           getMatchKey={(m) => m.id}
+          emptyGroupMessage="Niciun meci de grupă deschis momentan."
+          emptyKnockoutMessage="Niciun meci de play-off deschis momentan."
           renderMatch={(m) => (
             <MatchPredictionsBlock
               match={m}
@@ -222,7 +227,9 @@ function MatchPredictionsBlock({
 }) {
   const homeName = m.home_team?.name ?? m.home_team_label ?? "TBD";
   const awayName = m.away_team?.name ?? m.away_team_label ?? "TBD";
-  const time = new Date(m.kickoff_at).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
+  const time = formatKickoffTime(m.kickoff_at);
+  const dateShort = formatKickoffDateShort(m.kickoff_at);
+  const phaseLabel = getMatchPhaseLabel(m.stage, m.group_letter);
 
   return (
     <div className="px-4 py-4 sm:px-5">
@@ -230,9 +237,8 @@ function MatchPredictionsBlock({
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-sm font-black tabular-nums text-[var(--wc-hermes)]">{time}</span>
-            {m.group_letter && (
-              <span className="text-[10px] font-semibold uppercase text-muted-foreground">Gr {m.group_letter}</span>
-            )}
+            <span className="text-[10px] capitalize text-muted-foreground">{dateShort}</span>
+            <span className="text-[10px] font-semibold uppercase text-muted-foreground">{phaseLabel}</span>
             <span className="text-[10px] text-muted-foreground">
               {predictions.length} {predictions.length === 1 ? "pronostic" : "pronosticuri"}
             </span>
