@@ -3,8 +3,10 @@ import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/app/page-header";
+import { MatchDayAccordion } from "@/components/app/match-day-accordion";
 import { TeamFlag } from "@/components/app/team-flag";
 import { formatPredictionScores } from "@/lib/prediction-utils";
+import { groupMatchesByDay } from "@/lib/match-groups";
 import { isMatchOpen } from "@/lib/match-utils";
 import { ClipboardList, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -138,11 +140,7 @@ function PredictionsPage() {
     );
   }
 
-  const groups = matches.reduce<Record<string, Match[]>>((acc, m) => {
-    const d = new Date(m.kickoff_at).toLocaleDateString("ro-RO", { weekday: "long", day: "numeric", month: "long" });
-    (acc[d] ??= []).push(m);
-    return acc;
-  }, {});
+  const dayGroups = groupMatchesByDay(matches);
 
   return (
     <div className="space-y-6">
@@ -176,30 +174,22 @@ function PredictionsPage() {
           </p>
         </div>
       ) : (
-        Object.entries(groups).map(([date, list]) => (
-          <section key={date} className="app-card overflow-hidden">
-            <div className="bg-gradient-hermes px-4 py-2.5 sm:px-5">
-              <h2 className="text-center text-[11px] font-bold uppercase tracking-[0.2em] text-white/90 sm:text-xs">
-                {date}
-              </h2>
-            </div>
-            <ul className="divide-y divide-[var(--wc-light-gray)]">
-              {list.map((m) => (
-                <MatchPredictionsBlock
-                  key={m.id}
-                  match={m}
-                  predictions={(predsByMatch.get(m.id) ?? []).sort((a, b) => {
-                    const na = profileMap.get(a.user_id)?.display_name ?? "";
-                    const nb = profileMap.get(b.user_id)?.display_name ?? "";
-                    return na.localeCompare(nb, "ro");
-                  })}
-                  profileMap={profileMap}
-                  userId={userId}
-                />
-              ))}
-            </ul>
-          </section>
-        ))
+        <MatchDayAccordion
+          groups={dayGroups}
+          getMatchKey={(m) => m.id}
+          renderMatch={(m) => (
+            <MatchPredictionsBlock
+              match={m}
+              predictions={(predsByMatch.get(m.id) ?? []).sort((a, b) => {
+                const na = profileMap.get(a.user_id)?.display_name ?? "";
+                const nb = profileMap.get(b.user_id)?.display_name ?? "";
+                return na.localeCompare(nb, "ro");
+              })}
+              profileMap={profileMap}
+              userId={userId}
+            />
+          )}
+        />
       )}
     </div>
   );
@@ -235,7 +225,7 @@ function MatchPredictionsBlock({
   const time = new Date(m.kickoff_at).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" });
 
   return (
-    <li className="px-4 py-4 sm:px-5">
+    <div className="px-4 py-4 sm:px-5">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
@@ -299,6 +289,6 @@ function MatchPredictionsBlock({
           })}
         </ul>
       )}
-    </li>
+    </div>
   );
 }

@@ -5,6 +5,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PageHeader } from "@/components/app/page-header";
 import { TeamFlag } from "@/components/app/team-flag";
 import { MatchStatusBadge } from "@/components/app/match-status-badge";
+import { MatchDayAccordion } from "@/components/app/match-day-accordion";
+import { groupMatchesByDay } from "@/lib/match-groups";
 import { getMatchStatus } from "@/lib/match-utils";
 import { Calendar, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -84,34 +86,22 @@ function MatchesPage() {
     );
   }
 
-  const groups = matches.reduce<Record<string, Match[]>>((acc, m) => {
-    const d = new Date(m.kickoff_at).toLocaleDateString("ro-RO", { weekday: "long", day: "numeric", month: "long" });
-    (acc[d] ??= []).push(m);
-    return acc;
-  }, {});
-
+  const dayGroups = groupMatchesByDay(matches);
   const openCount = matches.filter((m) => getMatchStatus(m.status, m.kickoff_at, m.home_score) === "open").length;
 
   return (
     <div className="space-y-6">
       <PageHeader
         title="Meciuri"
-        description={`${matches.length} meciuri · ${openCount} deschise pentru pronostic`}
+        description={`${matches.length} meciuri · ${openCount} deschise · zilele finalizate sunt collapsed`}
         icon={<Calendar className="h-5 w-5 text-white" />}
       />
 
-      {Object.entries(groups).map(([date, list]) => (
-        <section key={date} className="app-card overflow-hidden">
-          <div className="bg-gradient-hermes px-4 py-2.5 sm:px-5">
-            <h2 className="text-center text-[11px] font-bold uppercase tracking-[0.2em] text-white/90 sm:text-xs">
-              {date}
-            </h2>
-          </div>
-          <ul className="divide-y divide-[var(--wc-light-gray)]">
-            {list.map((m) => <MatchRow key={m.id} m={m} />)}
-          </ul>
-        </section>
-      ))}
+      <MatchDayAccordion
+        groups={dayGroups}
+        getMatchKey={(m) => m.id}
+        renderMatch={(m) => <MatchRow m={m} />}
+      />
     </div>
   );
 }
@@ -125,12 +115,11 @@ function MatchRow({ m }: { m: Match }) {
   const score = finished ? `${m.home_score} - ${m.away_score}` : undefined;
 
   return (
-    <li>
-      <Link
-        to="/matches/$id"
-        params={{ id: m.id }}
-        className="group flex items-stretch transition-colors hover:bg-[var(--wc-hermes)]/[0.04] active:bg-[var(--wc-hermes)]/[0.07]"
-      >
+    <Link
+      to="/matches/$id"
+      params={{ id: m.id }}
+      className="group flex items-stretch transition-colors hover:bg-[var(--wc-hermes)]/[0.04] active:bg-[var(--wc-hermes)]/[0.07]"
+    >
         <div className={cn("w-1 shrink-0", STATUS_STRIPE[matchStatus])} aria-hidden />
 
         {/* Desktop */}
@@ -192,7 +181,6 @@ function MatchRow({ m }: { m: Match }) {
           />
         </div>
       </Link>
-    </li>
   );
 }
 

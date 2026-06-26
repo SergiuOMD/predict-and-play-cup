@@ -1,5 +1,5 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -14,9 +14,12 @@ import { runAutoScoreSyncAdmin } from "@/lib/scores-cron.functions";
 import { importPlayersFromApi, importPlayersFromFile } from "@/lib/players.functions";
 import { PlayerPicker } from "@/components/app/player-picker";
 import { PageHeader } from "@/components/app/page-header";
+import { MatchDayAccordion } from "@/components/app/match-day-accordion";
 import { TeamFlag } from "@/components/app/team-flag";
 import { resolveFlagEmoji } from "@/lib/team-flags";
+import { groupMatchesByDay, isMatchFinished } from "@/lib/match-groups";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import { Shield, Trash2, UserX, UserCheck, Pencil } from "lucide-react";
 import { isMatchOpen } from "@/lib/match-utils";
 import { formatPredictionScoresCsv } from "@/lib/prediction-utils";
@@ -137,6 +140,8 @@ function ImportFixturesCard() {
 
 function ScoresTab() {
   const [matches, setMatches] = useState<Match[]>([]);
+  const [pendingOnly, setPendingOnly] = useState(true);
+
   const load = async () => {
     const { data } = await supabase
       .from("matches")
@@ -145,6 +150,13 @@ function ScoresTab() {
     setMatches((data ?? []) as unknown as Match[]);
   };
   useEffect(() => { load(); }, []);
+
+  const filtered = useMemo(
+    () => (pendingOnly ? matches.filter((m) => !isMatchFinished(m)) : matches),
+    [matches, pendingOnly],
+  );
+  const dayGroups = useMemo(() => groupMatchesByDay(filtered), [filtered]);
+  const pendingCount = matches.filter((m) => !isMatchFinished(m)).length;
 
   const save = async (m: Match, home: number, away: number, status: string) => {
     const { error } = await supabase.from("matches").update({
@@ -156,35 +168,71 @@ function ScoresTab() {
   };
 
   return (
-    <Card><CardContent className="space-y-2 pt-6">
-      {matches.length === 0 && <p className="text-muted-foreground">Niciun meci.</p>}
-      {matches.map((m) => {
-        const home = m.home_team?.name ?? m.home_team_label ?? "TBD";
-        const away = m.away_team?.name ?? m.away_team_label ?? "TBD";
-        return (
-          <form key={m.id} method="post" onSubmit={(e) => {
-            e.preventDefault();
-            const fd = new FormData(e.currentTarget);
-            save(m, Number(fd.get("h")), Number(fd.get("a")), String(fd.get("status")));
-          }} className="flex flex-wrap items-center gap-2 border-b py-2 text-sm">
-            <span className="w-32 text-xs text-muted-foreground">{new Date(m.kickoff_at).toLocaleString("ro-RO")}</span>
-            <span className="flex-1">{home} vs {away}</span>
-            <Input name="h" type="number" min={0} defaultValue={m.home_score ?? 0} className="w-16" />
-            <span>-</span>
-            <Input name="a" type="number" min={0} defaultValue={m.away_score ?? 0} className="w-16" />
-            <Select name="status" defaultValue={m.status}>
-              <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-                <SelectItem value="live">Live</SelectItem>
-                <SelectItem value="finished">Finished</SelectItem>
-              </SelectContent>
-            </Select>
-            <Button type="submit" size="sm">Salvează</Button>
-          </form>
-        );
-      })}
-    </CardContent></Card>
+    <Card>
+      <CardHeader className="pb-3">
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <CardTitle className="text-lg">Scoruri meciuri</CardTitle>
+            <CardDescription>
+              {pendingCount} meciuri fără scor final · zilele finalizate sunt collapsed
+            </CardDescription>
+          </div>
+          <div className="flex items-center gap-2 rounded-lg border bg-muted/30 px-3 py-2">
+            <Switch id="pending-only" checked={pendingOnly} onCheckedChange={setPendingOnly} />
+            <Label htmlFor="pending-only" className="cursor-pointer text-sm font-normal">
+              Doar fără scor final
+            </Label>
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2">
+        {matches.length === 0 && <p className="text-muted-foreground">Niciun meci.</p>}
+        {matches.length > 0 && filtered.length === 0 && (
+          <p className="rounded-lg border border-[var(--wc-green)]/30 bg-[#e8f5e8] px-4 py-3 text-sm text-[#2d7a2c]">
+            Toate meciurile au scor final. Dezactivează filtrul pentru a vedea arhiva.
+          </p>
+        )}
+        {filtered.length > 0 && (
+          <MatchDayAccordion
+            key={pendingOnly ? "pending" : "all"}
+            groups={dayGroups}
+            getMatchKey={(m) => m.id}
+            renderMatch={(m) => {
+              const home = m.home_team?.name ?? m.home_team_label ?? "TBD";
+              const away = m.away_team?.name ?? m.away_team_label ?? "TBD";
+              return (
+                <form
+                  method="post"
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const fd = new FormData(e.currentTarget);
+                    save(m, Number(fd.get("h")), Number(fd.get("a")), String(fd.get("status")));
+                  }}
+                  className="flex flex-wrap items-center gap-2 px-4 py-3 text-sm sm:px-5"
+                >
+                  <span className="w-full text-xs text-muted-foreground sm:w-32">
+                    {new Date(m.kickoff_at).toLocaleTimeString("ro-RO", { hour: "2-digit", minute: "2-digit" })}
+                  </span>
+                  <span className="min-w-0 flex-1 font-medium">{home} vs {away}</span>
+                  <Input name="h" type="number" min={0} defaultValue={m.home_score ?? ""} placeholder="0" className="w-16" />
+                  <span>-</span>
+                  <Input name="a" type="number" min={0} defaultValue={m.away_score ?? ""} placeholder="0" className="w-16" />
+                  <Select name="status" defaultValue={m.status}>
+                    <SelectTrigger className="w-32"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="scheduled">Scheduled</SelectItem>
+                      <SelectItem value="live">Live</SelectItem>
+                      <SelectItem value="finished">Finished</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button type="submit" size="sm">Salvează</Button>
+                </form>
+              );
+            }}
+          />
+        )}
+      </CardContent>
+    </Card>
   );
 }
 
