@@ -27,7 +27,10 @@ export type FootballDataMatch = {
   homeTeam: FootballDataTeam;
   awayTeam: FootballDataTeam;
   score: {
+    duration?: string | null;
     fullTime: { home: number | null; away: number | null };
+    regularTime?: { home: number | null; away: number | null } | null;
+    extraTime?: { home: number | null; away: number | null } | null;
   };
 };
 

@@ -122,13 +122,13 @@ function ImportFixturesCard() {
       <CardHeader>
         <CardTitle className="text-lg">Import & sync scoruri (football-data.org)</CardTitle>
         <CardDescription>
-          Import manual fixtures sau verificare automată programată la +3h și +4h după kickoff
-          (Edge Function <code className="text-xs">sync-match-scores</code>, cron la 15 min).
+          Import program (meciuri + echipe) fără suprascrierea scorurilor play-off sau blocate manual.
+          Sync auto (cron): actualizează programul + scoruri doar la grupe, la +3h și +4h după kickoff.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-wrap gap-2">
         <Button onClick={run} disabled={loading}>
-          {loading ? "Se importă..." : "Importă fixtures"}
+          {loading ? "Se importă..." : "Actualizează program & echipe"}
         </Button>
         <Button variant="outline" onClick={runAutoSync} disabled={autoLoading}>
           {autoLoading ? "Se verifică..." : "Rulează sync auto (test)"}
@@ -160,7 +160,10 @@ function ScoresTab() {
 
   const save = async (m: Match, home: number, away: number, status: string) => {
     const { error } = await supabase.from("matches").update({
-      home_score: home, away_score: away, status: status as "scheduled" | "live" | "finished" | "postponed",
+      home_score: home,
+      away_score: away,
+      status: status as "scheduled" | "live" | "finished" | "postponed",
+      score_locked: true,
     }).eq("id", m.id);
     if (error) return toast.error(error.message);
     toast.success("Scor salvat & puncte recalculate");

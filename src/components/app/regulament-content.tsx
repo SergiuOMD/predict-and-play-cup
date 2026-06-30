@@ -23,6 +23,9 @@ const SECTIONS: RuleSection[] = [
       "Pentru fiecare meci trimiți exact 3 scoruri (pot fi identice sau diferite).",
       "Primești 1 punct pentru fiecare scor ghicit exact — maximum 3 puncte per meci.",
       "Nu există puncte parțiale pentru diferență de goluri sau pentru câștigătorul meciului.",
+      "La meciurile de play-off (eliminatorii), la calculul punctelor se ia în considerare doar scorul de la finalul timpului regulamentar (90 de minute).",
+      "Prelungirile (2 × 15 minute) și loviturile de la 11 metri nu intră în scorul folosit pentru punctaj.",
+      "Exemplu play-off: meciul este 1-1 după 90 min, apoi se decide în prelungiri sau la penalty — pentru puncte contează pronosticul 1-1.",
       "Pronosticurile pot fi modificate oricând până la blocare.",
     ],
   },
@@ -57,7 +60,7 @@ const SECTIONS: RuleSection[] = [
     icon: Shield,
     title: "6. Corectitudine & administrare",
     items: [
-      "Scorurile oficiale ale meciurilor sunt sursa pentru calculul punctelor.",
+      "Scorurile oficiale ale meciurilor sunt sursa pentru calculul punctelor. La play-off, scorul după 90 de minute (timp regulamentar).",
       "Organizatorii pot corecta scoruri sau dezactiva conturi care încalcă regulamentul.",
       "Deciziile organizatorilor în caz de dispute sunt finale.",
     ],

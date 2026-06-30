@@ -3,11 +3,13 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/integrations/supabase/types";
 
 import { fetchWorldCupMatches } from "./client.server";
-import { resolveFlagEmoji } from "@/lib/team-flags";
 import { mapGroupLetter, mapStage, mapStatus } from "./mappers";
+import { apiScoreForPoints, isKnockoutApiStage, shouldPreserveScores } from "./score-api";
 import type { FootballDataMatch, FootballDataTeam } from "./types";
+import { resolveFlagEmoji } from "@/lib/team-flags";
 
 type DbClient = SupabaseClient<Database>;
+type MatchStage = Database["public"]["Enums"]["match_stage"];
 
 export type SyncResult = {
   teamsUpserted: number;
@@ -92,6 +94,35 @@ async function upsertTeam(
   return inserted.id;
 }
 
+function buildMatchMeta(
+  match: FootballDataMatch,
+  teamCache: Map<string, string>,
+  groupLetter: string | null,
+  stage: MatchStage,
+) {
+  let homeTeamId: string | null = null;
+  let awayTeamId: string | null = null;
+
+  if (match.homeTeam.id != null && match.homeTeam.name) {
+    homeTeamId = teamCache.get(String(match.homeTeam.id)) ?? null;
+  }
+  if (match.awayTeam.id != null && match.awayTeam.name) {
+    awayTeamId = teamCache.get(String(match.awayTeam.id)) ?? null;
+  }
+
+  return {
+    external_id: String(match.id),
+    kickoff_at: match.utcDate,
+    stage,
+    status: mapStatus(match.status),
+    group_letter: groupLetter,
+    home_team_id: homeTeamId,
+    away_team_id: awayTeamId,
+    home_team_label: homeTeamId ? null : (match.homeTeam.name ?? match.homeTeam.shortName),
+    away_team_label: awayTeamId ? null : (match.awayTeam.name ?? match.awayTeam.shortName),
+  };
+}
+
 async function upsertMatch(
   supabase: DbClient,
   match: FootballDataMatch,
@@ -100,51 +131,52 @@ async function upsertMatch(
   const extId = String(match.id);
   const groupLetter = mapGroupLetter(match.group);
   const stage = mapStage(match.stage);
-  const status = mapStatus(match.status);
-
-  let homeTeamId: string | null = null;
-  let awayTeamId: string | null = null;
+  const isKnockout = isKnockoutApiStage(match.stage);
+  const apiScores = apiScoreForPoints(match);
 
   if (match.homeTeam.id != null && match.homeTeam.name) {
-    homeTeamId = await upsertTeam(supabase, match.homeTeam, groupLetter, teamCache);
+    await upsertTeam(supabase, match.homeTeam, groupLetter, teamCache);
   }
   if (match.awayTeam.id != null && match.awayTeam.name) {
-    awayTeamId = await upsertTeam(supabase, match.awayTeam, groupLetter, teamCache);
+    await upsertTeam(supabase, match.awayTeam, groupLetter, teamCache);
   }
 
-  const payload = {
-    external_id: extId,
-    kickoff_at: match.utcDate,
-    stage,
-    status,
-    group_letter: groupLetter,
-    home_team_id: homeTeamId,
-    away_team_id: awayTeamId,
-    home_team_label: homeTeamId ? null : (match.homeTeam.name ?? match.homeTeam.shortName),
-    away_team_label: awayTeamId ? null : (match.awayTeam.name ?? match.awayTeam.shortName),
-    home_score: match.score.fullTime.home,
-    away_score: match.score.fullTime.away,
-  };
+  const meta = buildMatchMeta(match, teamCache, groupLetter, stage);
 
   const { data: existing } = await supabase
     .from("matches")
-    .select("id")
+    .select("id, stage, score_locked, home_score, away_score")
     .eq("external_id", extId)
     .maybeSingle();
 
   if (existing) {
+    const preserve = shouldPreserveScores(stage, existing.score_locked);
+    const payload = preserve
+      ? meta
+      : {
+          ...meta,
+          home_score: apiScores.home,
+          away_score: apiScores.away,
+        };
+
     const { error } = await supabase.from("matches").update(payload).eq("id", existing.id);
     if (error) throw new Error(`Meci ${extId}: ${error.message}`);
     return "upserted";
   }
 
-  const { error } = await supabase.from("matches").insert(payload);
+  const insertPayload = isKnockout
+    ? { ...meta, home_score: null, away_score: null }
+    : { ...meta, home_score: apiScores.home, away_score: apiScores.away };
+
+  const { error } = await supabase.from("matches").insert(insertPayload);
   if (error) throw new Error(`Meci ${extId}: ${error.message}`);
   return "upserted";
 }
 
-export async function syncFootballDataToSupabase(supabase: DbClient): Promise<SyncResult> {
-  const { matches } = await fetchWorldCupMatches();
+export async function syncFootballDataFromMatches(
+  supabase: DbClient,
+  matches: FootballDataMatch[],
+): Promise<SyncResult> {
   const teamCache = new Map<string, string>();
   let teamsUpserted = 0;
   let matchesUpserted = 0;
@@ -175,4 +207,9 @@ export async function syncFootballDataToSupabase(supabase: DbClient): Promise<Sy
     totalTeams: seenTeams.size,
     totalMatches: matches.length,
   };
+}
+
+export async function syncFootballDataToSupabase(supabase: DbClient): Promise<SyncResult> {
+  const { matches } = await fetchWorldCupMatches();
+  return syncFootballDataFromMatches(supabase, matches);
 }
